@@ -15,12 +15,14 @@ namespace DependencySystem.Services.Auth
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
 
-        public AuthService(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IConfiguration config)
+        public AuthService(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IConfiguration config, IEmailService emailService)
         {
             _userManager = userManager;
             _context = context;
             _config = config;
+            _emailService = emailService;
         }
 
 
@@ -189,45 +191,6 @@ namespace DependencySystem.Services.Auth
             };
         }
 
-        public async Task<AuthResponseDto> SendOtpAsync(SendOtpRequestDto dto)
-        {
-            var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null)
-                return new AuthResponseDto { Success = false, Message = "User not found with this email." };
-
-            if (user.IsVerified)
-                return new AuthResponseDto { Success = false, Message = "User already verified." };
-
-            // Generate 6 digit OTP
-            var otp = new Random().Next(100000, 999999).ToString();
-
-            // Remove old OTP if exists
-            var oldOtp = await _context.OtpVerifications
-                .FirstOrDefaultAsync(x => x.Email == dto.Email && x.IsUsed == false);
-
-            if (oldOtp != null)
-                _context.OtpVerifications.Remove(oldOtp);
-
-            var otpEntity = new OtpVerification
-            {
-                Email = dto.Email,
-                OtpCode = otp,
-                ExpiryTime = DateTime.UtcNow.AddMinutes(5),
-                IsUsed = false
-            };
-
-            await _context.OtpVerifications.AddAsync(otpEntity);
-            await _context.SaveChangesAsync();
-
-            // ✅ For now we return OTP in response (testing)
-            // Later you will send OTP via Email/SMS.
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = $"OTP sent successfully. (TEST OTP: {otp})"
-            };
-        }
-
         public async Task<AuthResponseDto> VerifyOtpAsync(VerifyOtpRequestDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
@@ -255,5 +218,51 @@ namespace DependencySystem.Services.Auth
                 Message = "OTP verified successfully. Account activated."
             };
         }
+
+        public async Task<AuthResponseDto> SendOtpAsync(SendOtpRequestDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return new AuthResponseDto { Success = false, Message = "User not found with this email." };
+
+            if (user.IsVerified)
+                return new AuthResponseDto { Success = false, Message = "User already verified." };
+
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            var oldOtp = await _context.OtpVerifications
+                .FirstOrDefaultAsync(x => x.Email == dto.Email && x.IsUsed == false);
+
+            if (oldOtp != null)
+                _context.OtpVerifications.Remove(oldOtp);
+
+            var otpEntity = new OtpVerification
+            {
+                Email = dto.Email,
+                OtpCode = otp,
+                ExpiryTime = DateTime.UtcNow.AddMinutes(5),
+                IsUsed = false
+            };
+
+            await _context.OtpVerifications.AddAsync(otpEntity);
+            await _context.SaveChangesAsync();
+
+            // ✅ Send OTP Email
+            var subject = "OTP Verification - DependencySystem";
+            var body = $@"
+        <h3>Your OTP Code</h3>
+        <p>Your OTP is: <b style='font-size:20px'>{otp}</b></p>
+        <p>This OTP will expire in 5 minutes.</p>
+    ";
+
+            await _emailService.SendEmailAsync(dto.Email, subject, body);
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "OTP sent successfully to your email."
+            };
+        }
+
     }
 }
