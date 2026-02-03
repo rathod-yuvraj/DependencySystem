@@ -10,6 +10,7 @@ namespace DependencySystem.DAL
             : base(options) { }
 
         public DbSet<OtpVerification> OtpVerifications { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     }
 

@@ -38,5 +38,16 @@ namespace DependencySystem.Controllers.Auth
             if (!result.Success) return BadRequest(result);
             return Ok(result);
         }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginRequestDto dto)
+        {
+            var result = await _authService.LoginAsync(dto);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
     }
 }

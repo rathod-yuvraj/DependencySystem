@@ -3,6 +3,10 @@ using DependencySystem.DTOs.Auth;
 using DependencySystem.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace DependencySystem.Services.Auth
 {
@@ -10,11 +14,15 @@ namespace DependencySystem.Services.Auth
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
-        public AuthService(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
+        private readonly IConfiguration _config;
+
+        public AuthService(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IConfiguration config)
         {
             _userManager = userManager;
             _context = context;
+            _config = config;
         }
+
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto dto)
         {
@@ -50,6 +58,72 @@ namespace DependencySystem.Services.Auth
                 Message = "User registered successfully. Please verify OTP."
             };
         }
+
+        public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto)
+        {
+            ApplicationUser? user = await _userManager.FindByEmailAsync(dto.EmailOrUsername);
+
+            if (user == null)
+                user = await _userManager.FindByNameAsync(dto.EmailOrUsername);
+
+            if (user == null)
+                return new LoginResponseDto { Success = false, Message = "Invalid credentials." };
+
+            if (!user.IsVerified)
+                return new LoginResponseDto { Success = false, Message = "User not verified. Please verify OTP." };
+
+            var validPassword = await _userManager.CheckPasswordAsync(user, dto.Password);
+            if (!validPassword)
+                return new LoginResponseDto { Success = false, Message = "Invalid credentials." };
+
+            // ✅ Create JWT
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Email, user.Email ?? ""),
+        new Claim(ClaimTypes.Name, user.UserName ?? "")
+    };
+
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+                claims.Add(new Claim(ClaimTypes.Role, role));
+
+            var jwtSection = _config.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!));
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSection["Issuer"],
+                audience: jwtSection["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSection["DurationInMinutes"])),
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            );
+
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            // ✅ Refresh Token
+            var refreshToken = Guid.NewGuid().ToString();
+            var refreshEntity = new RefreshToken
+            {
+                Token = refreshToken,
+                UserId = user.Id,
+                ExpiryDate = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false
+            };
+
+            _context.RefreshTokens.Add(refreshEntity);
+            await _context.SaveChangesAsync();
+
+            return new LoginResponseDto
+            {
+                Success = true,
+                Message = "Login successful.",
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                Expiration = token.ValidTo
+            };
+        }
+
 
         public async Task<AuthResponseDto> SendOtpAsync(SendOtpRequestDto dto)
         {

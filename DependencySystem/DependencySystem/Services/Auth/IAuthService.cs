@@ -6,6 +6,8 @@ namespace DependencySystem.Services.Auth
     {
         Task<AuthResponseDto> RegisterAsync(RegisterRequestDto dto);
         Task<AuthResponseDto> SendOtpAsync(SendOtpRequestDto dto);
+        Task<LoginResponseDto> LoginAsync(LoginRequestDto dto);
+
         Task<AuthResponseDto> VerifyOtpAsync(VerifyOtpRequestDto dto);
     }
 }
