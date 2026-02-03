@@ -23,6 +23,8 @@ namespace DependencySystem.DAL   // or whatever namespace you use
 
         public DbSet<Dependency> Dependencies { get; set; }
         public DbSet<TaskDependency> TaskDependencies { get; set; }
+        public DbSet<TeamMemberProfile> TeamMemberProfiles { get; set; }
+        public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; }
 
 
 
@@ -98,6 +100,35 @@ namespace DependencySystem.DAL   // or whatever namespace you use
                 .HasForeignKey(td => td.DependsOnTaskID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ===================== USER → PROFILE (1-1) =====================
+            builder.Entity<ApplicationUser>()
+                .HasOne(u => u.TeamMemberProfile)
+                .WithOne(p => p.User)
+                .HasForeignKey<TeamMemberProfile>(p => p.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ===================== PROFILE → DEPARTMENT (Many Profiles → 1 Department) =====================
+            builder.Entity<TeamMemberProfile>()
+                .HasOne(p => p.Department)
+                .WithMany()
+                .HasForeignKey(p => p.DepartmentID)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // ===================== PROJECT ↔ USER (Many-to-Many with Role) =====================
+            builder.Entity<ProjectTeamMember>()
+                .HasKey(x => new { x.ProjectID, x.UserID });
+
+            builder.Entity<ProjectTeamMember>()
+                .HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProjectTeamMember>()
+                .HasOne(x => x.User)
+                .WithMany(u => u.ProjectTeamMembers)
+                .HasForeignKey(x => x.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

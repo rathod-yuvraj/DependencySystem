@@ -37,6 +37,9 @@ builder.Services.AddScoped<DependencySystem.Services.Modules.IModuleService,
                            DependencySystem.Services.Modules.ModuleService>();
 builder.Services.AddScoped<DependencySystem.Services.Tasks.ITaskService,
                            DependencySystem.Services.Tasks.TaskService>();
+builder.Services.AddScoped<
+    DependencySystem.Services.Dependencies.IDependencyService,
+    DependencySystem.Services.Dependencies.DependencyService>();
 
 
 
