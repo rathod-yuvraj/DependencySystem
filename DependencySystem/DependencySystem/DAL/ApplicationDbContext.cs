@@ -30,6 +30,7 @@ namespace DependencySystem.DAL   // or whatever namespace you use
         public DbSet<ModuleTechnology> ModuleTechnologies { get; set; }
         public DbSet<UserTechnology> UserTechnologies { get; set; }
 
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
 
 

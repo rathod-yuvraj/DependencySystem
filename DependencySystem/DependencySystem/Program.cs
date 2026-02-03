@@ -46,6 +46,9 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     DependencySystem.Services.Technologies.ITechnologyService,
     DependencySystem.Services.Technologies.TechnologyService>();
+builder.Services.AddScoped<
+    DependencySystem.Services.Audit.IAuditService,
+    DependencySystem.Services.Audit.AuditService>();
 
 
 
@@ -91,6 +94,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<DependencySystem.Middlewares.ExceptionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
