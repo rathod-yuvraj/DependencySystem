@@ -19,10 +19,23 @@ namespace DependencySystem.Controllers.Auth
         public async Task<IActionResult> Register(RegisterRequestDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
 
-            if (!result.Success)
-                return BadRequest(result);
+        [HttpPost("send-otp")]
+        public async Task<IActionResult> SendOtp(SendOtpRequestDto dto)
+        {
+            var result = await _authService.SendOtpAsync(dto);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
 
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp(VerifyOtpRequestDto dto)
+        {
+            var result = await _authService.VerifyOtpAsync(dto);
+            if (!result.Success) return BadRequest(result);
             return Ok(result);
         }
     }

@@ -5,5 +5,7 @@ namespace DependencySystem.Services.Auth
     public interface IAuthService
     {
         Task<AuthResponseDto> RegisterAsync(RegisterRequestDto dto);
+        Task<AuthResponseDto> SendOtpAsync(SendOtpRequestDto dto);
+        Task<AuthResponseDto> VerifyOtpAsync(VerifyOtpRequestDto dto);
     }
 }

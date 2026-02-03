@@ -8,5 +8,9 @@ namespace DependencySystem.DAL
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
+
+        public DbSet<OtpVerification> OtpVerifications { get; set; }
+
     }
+
 }
