@@ -48,6 +48,16 @@ namespace DependencySystem.Controllers.Auth
 
             return Ok(result);
         }
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenRequestDto dto)
+        {
+            var result = await _authService.RefreshTokenAsync(dto);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
 
     }
 }

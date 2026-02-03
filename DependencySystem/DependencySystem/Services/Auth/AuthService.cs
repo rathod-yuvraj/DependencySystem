@@ -124,6 +124,70 @@ namespace DependencySystem.Services.Auth
             };
         }
 
+        public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
+        {
+            var savedToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(x => x.Token == dto.RefreshToken && x.IsRevoked == false);
+
+            if (savedToken == null)
+                return new LoginResponseDto { Success = false, Message = "Invalid refresh token." };
+
+            if (savedToken.ExpiryDate < DateTime.UtcNow)
+                return new LoginResponseDto { Success = false, Message = "Refresh token expired." };
+
+            var user = await _userManager.FindByIdAsync(savedToken.UserId);
+            if (user == null)
+                return new LoginResponseDto { Success = false, Message = "User not found." };
+
+            // ✅ revoke old refresh token (rotation)
+            savedToken.IsRevoked = true;
+
+            // ✅ create new access token
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Email, user.Email ?? ""),
+        new Claim(ClaimTypes.Name, user.UserName ?? "")
+    };
+
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+                claims.Add(new Claim(ClaimTypes.Role, role));
+
+            var jwtSection = _config.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!));
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSection["Issuer"],
+                audience: jwtSection["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSection["DurationInMinutes"])),
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            );
+
+            var newAccessToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            // ✅ generate new refresh token
+            var newRefreshToken = Guid.NewGuid().ToString();
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                Token = newRefreshToken,
+                UserId = user.Id,
+                ExpiryDate = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false
+            });
+
+            await _context.SaveChangesAsync();
+
+            return new LoginResponseDto
+            {
+                Success = true,
+                Message = "Token refreshed successfully.",
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken,
+                Expiration = token.ValidTo
+            };
+        }
 
         public async Task<AuthResponseDto> SendOtpAsync(SendOtpRequestDto dto)
         {
