@@ -10,6 +10,7 @@
 		<!-- ===============================
          Entity Framework Core (NET 8)
          =============================== -->
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.23" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.23">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
