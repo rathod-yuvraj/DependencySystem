@@ -16,6 +16,7 @@ namespace DependencySystem.DAL   // or whatever namespace you use
         public DbSet<Company> Companies { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Project> Projects { get; set; }
+        public DbSet<Module> Modules { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -46,6 +47,11 @@ namespace DependencySystem.DAL   // or whatever namespace you use
             builder.Entity<Project>()
                 .HasIndex(p => new { p.DepartmentID, p.ProjectName })
                 .IsUnique();
+            builder.Entity<Module>()
+    .HasOne(m => m.Project)
+    .WithMany()
+    .HasForeignKey(m => m.ProjectID)
+    .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

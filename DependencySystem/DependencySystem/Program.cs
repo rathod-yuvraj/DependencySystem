@@ -33,6 +33,8 @@ builder.Services.AddScoped<DependencySystem.Services.Departments.IDepartmentServ
                            DependencySystem.Services.Departments.DepartmentService>();
 builder.Services.AddScoped<DependencySystem.Services.Projects.IProjectService,
                            DependencySystem.Services.Projects.ProjectService>();
+builder.Services.AddScoped<DependencySystem.Services.Modules.IModuleService,
+                           DependencySystem.Services.Modules.ModuleService>();
 
 
 
