@@ -1,8 +1,9 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.Helper;
-using DependencySystem.Helpers;
+//using DependencySystem.Helpers;
 using DependencySystem.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -59,7 +60,19 @@ builder.Services.AddScoped<
     DependencySystem.Services.Audit.IAuditService,
     DependencySystem.Services.Audit.AuditService>();
 
+builder.Services.AddSingleton<IAuthorizationHandler, ProjectRoleHandler>();
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ProjectManagerOnly",
+        policy => policy.Requirements.Add(new ProjectRoleRequirement("Manager")));
+
+    options.AddPolicy("ProjectManagerOrMaintainer",
+        policy => policy.Requirements.Add(new ProjectRoleRequirement("Manager", "Maintainer")));
+
+    options.AddPolicy("ProjectAnyMember",
+        policy => policy.Requirements.Add(new ProjectRoleRequirement("Manager", "Developer", "Maintainer")));
+});
 
 
 

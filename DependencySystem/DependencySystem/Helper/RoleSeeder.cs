@@ -1,7 +1,7 @@
 ﻿using DependencySystem.Helper;
 using Microsoft.AspNetCore.Identity;
 
-namespace DependencySystem.Helpers
+namespace DependencySystem.Helper
 {
     public static class RoleSeeder
     {
