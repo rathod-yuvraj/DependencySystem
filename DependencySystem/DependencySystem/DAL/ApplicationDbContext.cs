@@ -18,6 +18,13 @@ namespace DependencySystem.DAL   // or whatever namespace you use
         public DbSet<Project> Projects { get; set; }
         public DbSet<Module> Modules { get; set; }
 
+
+        public DbSet<TaskEntity> Tasks { get; set; }
+
+
+
+
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -52,6 +59,13 @@ namespace DependencySystem.DAL   // or whatever namespace you use
     .WithMany()
     .HasForeignKey(m => m.ProjectID)
     .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<TaskEntity>().ToTable("Tasks");
+
+            builder.Entity<TaskEntity>()
+                .HasOne(t => t.Module)
+                .WithMany()
+                .HasForeignKey(t => t.ModuleID)
+                .OnDelete(DeleteBehavior.Cascade);
 
         }
     }
