@@ -29,6 +29,8 @@ builder.Services.AddScoped<DependencySystem.Services.Auth.IAuthService, Dependen
 builder.Services.AddScoped<DependencySystem.Services.Auth.IEmailService, DependencySystem.Services.Auth.EmailService>();
 builder.Services.AddScoped<DependencySystem.Services.Companies.ICompanyService,
                            DependencySystem.Services.Companies.CompanyService>();
+builder.Services.AddScoped<DependencySystem.Services.Departments.IDepartmentService,
+                           DependencySystem.Services.Departments.DepartmentService>();
 
 
 
