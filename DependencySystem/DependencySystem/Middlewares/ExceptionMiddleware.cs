@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using DependencySystem.Helper;
+using DependencySystem.Helpers;
+using System.Net;
 using System.Text.Json;
 
 namespace DependencySystem.Middlewares
@@ -20,15 +22,10 @@ namespace DependencySystem.Middlewares
             }
             catch (Exception ex)
             {
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 context.Response.ContentType = "application/json";
 
-                var response = new
-                {
-                    success = false,
-                    message = ex.Message
-                };
-
+                var response = ApiResponse<string>.Fail(ex.Message);
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
         }
