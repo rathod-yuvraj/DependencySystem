@@ -1,10 +1,12 @@
 ﻿using DependencySystem.DAL;
+using DependencySystem.Helper;
 using DependencySystem.Helpers;
 using DependencySystem.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+//using DependencySystem.Helper;
 using System;
 using System.Text;
 
@@ -98,6 +100,13 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+
+using (var scope = app.Services.CreateScope())
+{
+    await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
+    await AdminSeeder.SeedAdminAsync(scope.ServiceProvider, builder.Configuration);
 }
 
 app.UseHttpsRedirection();
