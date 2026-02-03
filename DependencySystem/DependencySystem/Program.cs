@@ -31,6 +31,8 @@ builder.Services.AddScoped<DependencySystem.Services.Companies.ICompanyService,
                            DependencySystem.Services.Companies.CompanyService>();
 builder.Services.AddScoped<DependencySystem.Services.Departments.IDepartmentService,
                            DependencySystem.Services.Departments.DepartmentService>();
+builder.Services.AddScoped<DependencySystem.Services.Projects.IProjectService,
+                           DependencySystem.Services.Projects.ProjectService>();
 
 
 

@@ -15,6 +15,7 @@ namespace DependencySystem.DAL   // or whatever namespace you use
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Department> Departments { get; set; }
+        public DbSet<Project> Projects { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -35,6 +36,15 @@ namespace DependencySystem.DAL   // or whatever namespace you use
 
             builder.Entity<Department>()
                 .HasIndex(d => new { d.CompanyID, d.DepartmentName })
+                .IsUnique();
+            builder.Entity<Project>()
+    .HasOne(p => p.Department)
+    .WithMany()
+    .HasForeignKey(p => p.DepartmentID)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Project>()
+                .HasIndex(p => new { p.DepartmentID, p.ProjectName })
                 .IsUnique();
 
         }
