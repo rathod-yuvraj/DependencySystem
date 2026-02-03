@@ -25,6 +25,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddScoped<DependencySystem.Services.Auth.IAuthService, DependencySystem.Services.Auth.AuthService>();
+builder.Services.AddScoped<DependencySystem.Services.Auth.IEmailService, DependencySystem.Services.Auth.EmailService>();
+
+
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
