@@ -1,6 +1,9 @@
-﻿namespace DependencySystem.Models
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace DependencySystem.Models
 {
-    public class ApplicationUser
+    public class ApplicationUser : IdentityUser
     {
+        public bool IsVerified { get; set; } = false;
     }
 }
