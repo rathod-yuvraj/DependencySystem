@@ -21,6 +21,8 @@ namespace DependencySystem.DAL   // or whatever namespace you use
 
         public DbSet<TaskEntity> Tasks { get; set; }
 
+        public DbSet<Dependency> Dependencies { get; set; }
+        public DbSet<TaskDependency> TaskDependencies { get; set; }
 
 
 
@@ -66,6 +68,36 @@ namespace DependencySystem.DAL   // or whatever namespace you use
                 .WithMany()
                 .HasForeignKey(t => t.ModuleID)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<Dependency>()
+    .HasOne(d => d.SourceModule)
+    .WithMany()
+    .HasForeignKey(d => d.SourceModuleID)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Dependency>()
+                .HasOne(d => d.TargetModule)
+                .WithMany()
+                .HasForeignKey(d => d.TargetModuleID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Dependency>()
+                .HasIndex(d => new { d.SourceModuleID, d.TargetModuleID })
+                .IsUnique();
+            builder.Entity<TaskDependency>()
+    .HasKey(td => new { td.TaskID, td.DependsOnTaskID });
+
+            builder.Entity<TaskDependency>()
+                .HasOne(td => td.Task)
+                .WithMany()
+                .HasForeignKey(td => td.TaskID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TaskDependency>()
+                .HasOne(td => td.DependsOnTask)
+                .WithMany()
+                .HasForeignKey(td => td.DependsOnTaskID)
+                .OnDelete(DeleteBehavior.Restrict);
+
 
         }
     }
