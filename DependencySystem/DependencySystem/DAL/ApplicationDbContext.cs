@@ -25,6 +25,10 @@ namespace DependencySystem.DAL   // or whatever namespace you use
         public DbSet<TaskDependency> TaskDependencies { get; set; }
         public DbSet<TeamMemberProfile> TeamMemberProfiles { get; set; }
         public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; }
+        public DbSet<Technology> Technologies { get; set; }
+        public DbSet<ProjectTechnology> ProjectTechnologies { get; set; }
+        public DbSet<ModuleTechnology> ModuleTechnologies { get; set; }
+        public DbSet<UserTechnology> UserTechnologies { get; set; }
 
 
 
@@ -129,6 +133,14 @@ namespace DependencySystem.DAL   // or whatever namespace you use
                 .WithMany(u => u.ProjectTeamMembers)
                 .HasForeignKey(x => x.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<ProjectTechnology>()
+    .HasKey(x => new { x.ProjectID, x.TechnologyID });
+
+            builder.Entity<ModuleTechnology>()
+                .HasKey(x => new { x.ModuleID, x.TechnologyID });
+
+            builder.Entity<UserTechnology>()
+                .HasKey(x => new { x.UserID, x.TechnologyID });
 
         }
     }

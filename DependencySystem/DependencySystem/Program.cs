@@ -40,6 +40,12 @@ builder.Services.AddScoped<DependencySystem.Services.Tasks.ITaskService,
 builder.Services.AddScoped<
     DependencySystem.Services.Dependencies.IDependencyService,
     DependencySystem.Services.Dependencies.DependencyService>();
+builder.Services.AddScoped<
+    DependencySystem.Services.Teams.ITeamService,
+    DependencySystem.Services.Teams.TeamService>();
+builder.Services.AddScoped<
+    DependencySystem.Services.Technologies.ITechnologyService,
+    DependencySystem.Services.Technologies.TechnologyService>();
 
 
 
