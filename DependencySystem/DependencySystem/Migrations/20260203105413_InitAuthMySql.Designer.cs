@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DependencySystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260203104525_AddRefreshTok")]
-    partial class AddRefreshTok
+    [Migration("20260203105413_InitAuthMySql")]
+    partial class InitAuthMySql
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
