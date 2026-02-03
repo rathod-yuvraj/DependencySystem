@@ -208,6 +208,7 @@ namespace DependencySystem.Services.Auth
 
             otpRecord.IsUsed = true;
             user.IsVerified = true;
+            await _userManager.AddToRoleAsync(user, Helper.AppRoles.Developer);
 
             await _context.SaveChangesAsync();
             await _userManager.UpdateAsync(user);
