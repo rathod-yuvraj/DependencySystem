@@ -1,4 +1,5 @@
 ﻿using DependencySystem.DAL;
+using DependencySystem.Helpers;
 using DependencySystem.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -58,7 +59,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
+using (var scope = app.Services.CreateScope())
+{
+    await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
+}
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
