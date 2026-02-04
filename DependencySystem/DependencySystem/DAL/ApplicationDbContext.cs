@@ -38,6 +38,7 @@ namespace DependencySystem.DAL   // or whatever namespace you use
         {
             base.OnModelCreating(builder);
 
+            // ================= IDENTITY FIX =================
             builder.Entity<ApplicationUser>()
                 .Property(e => e.ConcurrencyStamp)
                 .HasColumnType("varchar(255)");
@@ -45,53 +46,51 @@ namespace DependencySystem.DAL   // or whatever namespace you use
             builder.Entity<IdentityRole>()
                 .Property(e => e.ConcurrencyStamp)
                 .HasColumnType("varchar(255)");
+
+            // ================= COMPANY → DEPARTMENT =================
             builder.Entity<Department>()
-    .HasOne(d => d.Company)
-    .WithMany(c => c.Departments)
-    .HasForeignKey(d => d.CompanyID)
-    .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(d => d.Company)
+                .WithMany(c => c.Departments)
+                .HasForeignKey(d => d.CompanyID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<Department>()
                 .HasIndex(d => new { d.CompanyID, d.DepartmentName })
                 .IsUnique();
+
+            // ================= DEPARTMENT → PROJECT =================
             builder.Entity<Project>()
-    .HasOne(p => p.Department)
-    .WithMany()
-    .HasForeignKey(p => p.DepartmentID)
-    .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(p => p.Department)
+                .WithMany(d => d.Projects)
+                .HasForeignKey(p => p.DepartmentID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Project>()
                 .HasIndex(p => new { p.DepartmentID, p.ProjectName })
                 .IsUnique();
+
+            // ================= PROJECT → MODULE =================
             builder.Entity<Module>()
-    .HasOne(m => m.Project)
-    .WithMany()
-    .HasForeignKey(m => m.ProjectID)
-    .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(m => m.Project)
+                .WithMany(p => p.Modules)
+                .HasForeignKey(m => m.ProjectID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ================= MODULE → TASK =================
             builder.Entity<TaskEntity>().ToTable("Tasks");
 
             builder.Entity<TaskEntity>()
                 .HasOne(t => t.Module)
-                .WithMany()
+                .WithMany(m => m.Tasks)
                 .HasForeignKey(t => t.ModuleID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ================= MODULE DEPENDENCY GRAPH =================
             builder.Entity<Dependency>()
-    .HasOne(d => d.SourceModule)
-    .WithMany(m => m.OutgoingDependencies)
-    .HasForeignKey(d => d.SourceModuleID)
-    .OnDelete(DeleteBehavior.Restrict);
-            builder.Entity<ProjectTeamMember>()
-    .HasKey(x => new { x.ProjectID, x.UserID });
-
-            builder.Entity<ProjectTeamMember>()
-                .HasOne(x => x.Project)
-                .WithMany(p => p.ProjectTeamMembers)
-                .HasForeignKey(x => x.ProjectID);
-
-            builder.Entity<ProjectTeamMember>()
-                .HasOne(x => x.User)
-                .WithMany(u => u.ProjectTeamMembers)
-                .HasForeignKey(x => x.UserID);
+                .HasOne(d => d.SourceModule)
+                .WithMany(m => m.OutgoingDependencies)
+                .HasForeignKey(d => d.SourceModuleID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Dependency>()
                 .HasOne(d => d.TargetModule)
@@ -100,56 +99,46 @@ namespace DependencySystem.DAL   // or whatever namespace you use
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Dependency>()
-    .HasOne(d => d.SourceModule)
-    .WithMany()
-    .HasForeignKey(d => d.SourceModuleID)
-    .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<Dependency>()
-                .HasOne(d => d.TargetModule)
-                .WithMany()
-                .HasForeignKey(d => d.TargetModuleID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<Dependency>()
                 .HasIndex(d => new { d.SourceModuleID, d.TargetModuleID })
                 .IsUnique();
+
+            // ================= TASK DEPENDENCY GRAPH =================
             builder.Entity<TaskDependency>()
-    .HasKey(td => new { td.TaskID, td.DependsOnTaskID });
+                .HasKey(td => new { td.TaskID, td.DependsOnTaskID });
 
             builder.Entity<TaskDependency>()
                 .HasOne(td => td.Task)
-                .WithMany()
+                .WithMany(t => t.TaskDependencies)
                 .HasForeignKey(td => td.TaskID)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<TaskDependency>()
                 .HasOne(td => td.DependsOnTask)
-                .WithMany()
+                .WithMany(t => t.DependentTasks)
                 .HasForeignKey(td => td.DependsOnTaskID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ===================== USER → PROFILE (1-1) =====================
+            // ================= USER → PROFILE =================
             builder.Entity<ApplicationUser>()
                 .HasOne(u => u.TeamMemberProfile)
                 .WithOne(p => p.User)
                 .HasForeignKey<TeamMemberProfile>(p => p.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ===================== PROFILE → DEPARTMENT (Many Profiles → 1 Department) =====================
+            // ================= PROFILE → DEPARTMENT =================
             builder.Entity<TeamMemberProfile>()
                 .HasOne(p => p.Department)
                 .WithMany()
                 .HasForeignKey(p => p.DepartmentID)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // ===================== PROJECT ↔ USER (Many-to-Many with Role) =====================
+            // ================= PROJECT ↔ USER =================
             builder.Entity<ProjectTeamMember>()
                 .HasKey(x => new { x.ProjectID, x.UserID });
 
             builder.Entity<ProjectTeamMember>()
                 .HasOne(x => x.Project)
-                .WithMany()
+                .WithMany(p => p.ProjectTeamMembers)
                 .HasForeignKey(x => x.ProjectID)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -158,15 +147,17 @@ namespace DependencySystem.DAL   // or whatever namespace you use
                 .WithMany(u => u.ProjectTeamMembers)
                 .HasForeignKey(x => x.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ================= TECHNOLOGY =================
             builder.Entity<ProjectTechnology>()
-    .HasKey(x => new { x.ProjectID, x.TechnologyID });
+                .HasKey(x => new { x.ProjectID, x.TechnologyID });
 
             builder.Entity<ModuleTechnology>()
                 .HasKey(x => new { x.ModuleID, x.TechnologyID });
 
             builder.Entity<UserTechnology>()
                 .HasKey(x => new { x.UserID, x.TechnologyID });
-
         }
+
     }
 }
