@@ -127,7 +127,11 @@ using (var scope = app.Services.CreateScope())
 {
     await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
     await AdminSeeder.SeedAdminAsync(scope.ServiceProvider, builder.Configuration);
+
+    // ✅ NEW
+    await DemoDataSeeder.SeedDemoDataAsync(scope.ServiceProvider, builder.Configuration);
 }
+
 
 
 
