@@ -8,6 +8,6 @@ namespace DependencySystem.Controllers
     {
         [HttpGet]
         public IActionResult Check()
-            => Ok("✅ DependencySystem API Running");
+            => Ok(" DependencySystem API Running");
     }
 }
