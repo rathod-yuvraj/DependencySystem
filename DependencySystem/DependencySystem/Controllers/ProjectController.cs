@@ -27,6 +27,14 @@ namespace DependencySystem.Controllers
             var project = await _projectService.GetByIdAsync(id);
             return project == null ? NotFound() : Ok(project);
         }
+        [HttpGet("{projectId}/tree")]
+        public async Task<IActionResult> GetProjectTree(int projectId)
+        {
+            var result = await _projectService.GetProjectTreeAsync(projectId);
+            if (result == null) return NotFound();
+
+            return Ok(result);
+        }
 
         [HttpGet("department/{departmentId}")]
         public async Task<IActionResult> GetByDepartment(int departmentId)

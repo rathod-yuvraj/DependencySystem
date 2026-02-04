@@ -14,11 +14,21 @@ namespace DependencySystem.Models
         public string Description { get; set; } = string.Empty;
 
         [Required]
-        public string Status { get; set; } = "Pending"; // Pending/InProgress/Completed
+        public string Status { get; set; } = "Pending"; // Pending / InProgress / Completed
 
-        [ForeignKey("Module")]
+        [ForeignKey(nameof(Module))]
         public int ModuleID { get; set; }
 
         public Module? Module { get; set; }
+
+        // ===================== NAVIGATIONS =====================
+
+        // Task → Task Dependencies (this task depends on others)
+        public ICollection<TaskDependency> TaskDependencies { get; set; }
+            = new List<TaskDependency>();
+
+        // Other tasks depending on this task
+        public ICollection<TaskDependency> DependentTasks { get; set; }
+            = new List<TaskDependency>();
     }
 }

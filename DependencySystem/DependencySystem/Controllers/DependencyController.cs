@@ -62,5 +62,11 @@ namespace DependencySystem.Controllers
             var deleted = await _service.RemoveTaskDependencyAsync(taskId, dependsOnTaskId);
             return deleted ? Ok("Deleted") : NotFound();
         }
+        [HttpGet("project/{projectId}/graph")]
+        public async Task<IActionResult> GetProjectGraph(int projectId)
+        {
+            return Ok(await _dependencyService.GetProjectDependencyGraphAsync(projectId));
+        }
+
     }
 }

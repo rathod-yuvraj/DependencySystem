@@ -15,5 +15,6 @@ namespace DependencySystem.Models
         public int CompanyID { get; set; }
 
         public Company? Company { get; set; }
+        public ICollection<Project> Projects { get; set; } = new List<Project>();
     }
 }

@@ -14,7 +14,39 @@ namespace DependencySystem.Services.Projects
             _context = context;
         }
 
-        public async Task<List<Project>> GetAllAsync()
+        public async Task<ProjectTreeResponseDto?> GetProjectTreeAsync(int projectId)
+        {
+            return await _context.Projects
+                .Where(p => p.ProjectID == projectId)
+                .Include(p => p.Department)
+                .Include(p => p.Modules)
+                    .ThenInclude(m => m.Tasks)
+                .Select(p => new ProjectTreeResponseDto
+                {
+                    ProjectID = p.ProjectID,
+                    ProjectName = p.ProjectName,
+                    Department = new DepartmentMiniDto
+                    {
+                        DepartmentID = p.Department!.DepartmentID,
+                        DepartmentName = p.Department.DepartmentName
+                    },
+                    Modules = p.Modules.Select(m => new ModuleTreeDto
+                    {
+                        ModuleID = m.ModuleID,
+                        ModuleName = m.ModuleName,
+                        Status = m.Status,
+                        Tasks = m.Tasks.Select(t => new TaskTreeDto
+                        {
+                            TaskID = t.TaskID,
+                            Title = t.Title,
+                            Status = t.Status
+                        }).ToList()
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+        }
+   
+public async Task<List<Project>> GetAllAsync()
         {
             return await _context.Projects
                 .Include(p => p.Department)

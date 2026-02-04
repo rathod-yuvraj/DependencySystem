@@ -119,5 +119,85 @@ namespace DependencySystem.Services.Dependencies
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<DependencyGraphDto> GetProjectDependencyGraphAsync(int projectId)
+        {
+            var graph = new DependencyGraphDto();
+
+            var modules = await _context.Modules
+                .Where(m => m.ProjectID == projectId)
+                .Include(m => m.Tasks)
+                .ToListAsync();
+
+            // MODULE NODES
+            foreach (var m in modules)
+            {
+                graph.Nodes.Add(new NodeDto
+                {
+                    Id = $"M{m.ModuleID}",
+                    Label = m.ModuleName,
+                    Type = "Module",
+                    Status = m.Status
+                });
+            }
+
+            // TASK NODES
+            foreach (var m in modules)
+            {
+                foreach (var t in m.Tasks)
+                {
+                    graph.Nodes.Add(new NodeDto
+                    {
+                        Id = $"T{t.TaskID}",
+                        Label = t.Title,
+                        Type = "Task",
+                        Status = t.Status
+                    });
+
+                    // Module → Task edge
+                    graph.Edges.Add(new EdgeDto
+                    {
+                        Source = $"M{m.ModuleID}",
+                        Target = $"T{t.TaskID}",
+                        Relation = "contains"
+                    });
+                }
+            }
+
+            // MODULE DEPENDENCIES
+            var moduleDeps = await _context.Dependencies
+                .Include(d => d.SourceModule)
+                .Include(d => d.TargetModule)
+                .Where(d => d.SourceModule.ProjectID == projectId)
+                .ToListAsync();
+
+            foreach (var d in moduleDeps)
+            {
+                graph.Edges.Add(new EdgeDto
+                {
+                    Source = $"M{d.SourceModuleID}",
+                    Target = $"M{d.TargetModuleID}",
+                    Relation = "depends_on"
+                });
+            }
+
+            // TASK DEPENDENCIES
+            var taskDeps = await _context.TaskDependencies
+                .Include(td => td.Task)
+                .Include(td => td.DependsOnTask)
+                .Where(td => td.Task.Module.ProjectID == projectId)
+                .ToListAsync();
+
+            foreach (var td in taskDeps)
+            {
+                graph.Edges.Add(new EdgeDto
+                {
+                    Source = $"T{td.TaskID}",
+                    Target = $"T{td.DependsOnTaskID}",
+                    Relation = "depends_on"
+                });
+            }
+
+            return graph;
+        }
     }
 }

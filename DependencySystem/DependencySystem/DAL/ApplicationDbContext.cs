@@ -77,6 +77,18 @@ namespace DependencySystem.DAL   // or whatever namespace you use
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Entity<Dependency>()
     .HasOne(d => d.SourceModule)
+    .WithMany(m => m.OutgoingDependencies)
+    .HasForeignKey(d => d.SourceModuleID)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Dependency>()
+                .HasOne(d => d.TargetModule)
+                .WithMany(m => m.IncomingDependencies)
+                .HasForeignKey(d => d.TargetModuleID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Dependency>()
+    .HasOne(d => d.SourceModule)
     .WithMany()
     .HasForeignKey(d => d.SourceModuleID)
     .OnDelete(DeleteBehavior.Restrict);
