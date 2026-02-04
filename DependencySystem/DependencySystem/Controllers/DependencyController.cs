@@ -65,7 +65,7 @@ namespace DependencySystem.Controllers
         [HttpGet("project/{projectId}/graph")]
         public async Task<IActionResult> GetProjectGraph(int projectId)
         {
-            return Ok(await _dependencyService.GetProjectDependencyGraphAsync(projectId));
+            return Ok(await _service.GetProjectDependencyGraphAsync(projectId));
         }
 
     }

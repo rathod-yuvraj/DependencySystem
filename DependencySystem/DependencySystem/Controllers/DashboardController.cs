@@ -1,7 +1,12 @@
 ﻿using DependencySystem.Helper;
+using DependencySystem.Services.Companies;
+using DependencySystem.Services.Dashboard;
+
+
 //using DependencySystem.Helper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DependencySystem.Controllers
 {
@@ -9,20 +14,40 @@ namespace DependencySystem.Controllers
     [ApiController]
     public class DashboardController : ControllerBase
     {
+        private readonly IDashboardService _dashboardService;
+        public DashboardController(IDashboardService dashboardService) {
+
+
+            _dashboardService = _dashboardService;
+        }
+
+        [HttpGet("project/{projectId}/summary")]
+        public async Task<IActionResult> GetProjectDashboard(int projectId)
+        {
+            return Ok(await _dashboardService.GetProjectDashboardAsync(projectId));
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpGet("admin")]
-        //[Authorize(Roles = AppRoles.Admin)]
-        public IActionResult AdminDashboard()
-            => Ok("✅ Welcome Admin Dashboard");
+        public async Task<IActionResult> AdminDashboard()
+        {
+            return Ok(await _dashboardService.GetAdminDashboardAsync());
+        }
 
-        [HttpGet("manager")]
-        //[Authorize(Roles = AppRoles.Manager)]
-        public IActionResult ManagerDashboard()
-            => Ok("✅ Welcome Manager Dashboard");
+        [Authorize(Roles = "Manager")]
+        [HttpGet("manager/project/{projectId}")]
+        public async Task<IActionResult> ManagerDashboard(int projectId)
+        {
+            return Ok(await _dashboardService.GetManagerDashboardAsync(projectId));
+        }
 
+        [Authorize(Roles = "Developer")]
         [HttpGet("developer")]
-        //[Authorize(Roles = AppRoles.Developer)]
-        public IActionResult DeveloperDashboard()
-            => Ok("✅ Welcome Developer Dashboard");
+        public async Task<IActionResult> DeveloperDashboard()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            return Ok(await _dashboardService.GetDeveloperDashboardAsync(userId));
+        }
 
         [HttpGet("maintainer")]
         //[Authorize(Roles = AppRoles.Maintainer)]

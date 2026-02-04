@@ -14,5 +14,7 @@ namespace DependencySystem.Services.Dependencies
         Task<List<TaskDependency>> GetTaskDependenciesAsync(int taskId);
         Task<TaskDependency> AddTaskDependencyAsync(AddTaskDependencyDto dto);
         Task<bool> RemoveTaskDependencyAsync(int taskId, int dependsOnTaskId);
+
+        Task<DependencyGraphDto> GetProjectDependencyGraphAsync(int projectId);
     }
 }

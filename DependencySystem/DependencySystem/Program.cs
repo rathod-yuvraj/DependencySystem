@@ -4,6 +4,7 @@ using DependencySystem.Models;
 using DependencySystem.Services.Audit;
 using DependencySystem.Services.Auth;
 using DependencySystem.Services.Companies;
+using DependencySystem.Services.Dashboard;
 using DependencySystem.Services.Departments;
 using DependencySystem.Services.Dependencies;
 using DependencySystem.Services.Modules;
@@ -84,6 +85,7 @@ builder.Services.AddScoped<IDependencyService, DependencyService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ITechnologyService, TechnologyService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IRoleDashboardService, RoleDashboardService>();
 
 // ============================
 // AUTHORIZATION
