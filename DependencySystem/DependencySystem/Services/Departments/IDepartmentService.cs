@@ -5,10 +5,10 @@ namespace DependencySystem.Services.Departments
 {
     public interface IDepartmentService
     {
-        Task<List<Department>> GetAllAsync();
-        Task<List<Department>> GetByCompanyIdAsync(int companyId);
-        Task<Department?> GetByIdAsync(int id);
-        Task<Department> CreateAsync(DepartmentCreateDto dto);
+        Task<List<DepartmentResponseDto>> GetAllAsync();
+        Task<List<DepartmentResponseDto>> GetByCompanyIdAsync(int companyId);
+        Task<DepartmentResponseDto?> GetByIdAsync(int id);
+        Task<DepartmentResponseDto> CreateAsync(DepartmentCreateDto dto);
         Task<bool> DeleteAsync(int id);
     }
 }
