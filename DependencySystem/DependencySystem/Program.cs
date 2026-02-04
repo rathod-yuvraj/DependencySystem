@@ -1,8 +1,8 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.Helper;
 using DependencySystem.Models;
-using DependencySystem.Services.Auth;
 using DependencySystem.Services.Audit;
+using DependencySystem.Services.Auth;
 using DependencySystem.Services.Companies;
 using DependencySystem.Services.Departments;
 using DependencySystem.Services.Dependencies;
@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 
 
@@ -137,7 +139,21 @@ builder.Services.AddAuthentication(options =>
 // ============================
 // MVC + SWAGGER
 // ============================
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Prevent circular reference explosions
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+
+        // Production: compact JSON (smaller payloads)
+        options.JsonSerializerOptions.WriteIndented = false;
+
+        // Optional but recommended
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition =
+            JsonIgnoreCondition.WhenWritingNull;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

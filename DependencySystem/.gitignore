@@ -13,3 +13,9 @@ obj/
 .vscode/
 appsettings.json
 /appsettings.json
+*.sln.DotSettings.user
+/packages/
+.DS_Store
+node_modules/
+dist/
+build/
