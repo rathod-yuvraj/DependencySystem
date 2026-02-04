@@ -15,10 +15,12 @@ namespace DependencySystem.Controllers
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
-        public DashboardController(IDashboardService dashboardService) {
+        private readonly IRoleDashboardService _roledashboardService;
+        public DashboardController(IDashboardService dashboardService, IRoleDashboardService roledashboardService) {
 
 
-            _dashboardService = _dashboardService;
+            _dashboardService = dashboardService;
+            _roledashboardService = roledashboardService;
         }
 
         [HttpGet("project/{projectId}/summary")]
@@ -31,14 +33,14 @@ namespace DependencySystem.Controllers
         [HttpGet("admin")]
         public async Task<IActionResult> AdminDashboard()
         {
-            return Ok(await _dashboardService.GetAdminDashboardAsync());
+            return Ok(await _roledashboardService.GetAdminDashboardAsync());
         }
 
         [Authorize(Roles = "Manager")]
         [HttpGet("manager/project/{projectId}")]
         public async Task<IActionResult> ManagerDashboard(int projectId)
         {
-            return Ok(await _dashboardService.GetManagerDashboardAsync(projectId));
+            return Ok(await _roledashboardService.GetManagerDashboardAsync(projectId));
         }
 
         [Authorize(Roles = "Developer")]
@@ -46,7 +48,7 @@ namespace DependencySystem.Controllers
         public async Task<IActionResult> DeveloperDashboard()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            return Ok(await _dashboardService.GetDeveloperDashboardAsync(userId));
+            return Ok(await _roledashboardService.GetDeveloperDashboardAsync(userId));
         }
 
         [HttpGet("maintainer")]

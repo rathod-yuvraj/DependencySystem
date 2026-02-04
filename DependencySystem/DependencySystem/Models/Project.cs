@@ -16,5 +16,8 @@ namespace DependencySystem.Models
 
         public Department? Department { get; set; }
         public ICollection<Module> Modules { get; set; } = new List<Module>();
+        public ICollection<ProjectTeamMember> ProjectTeamMembers { get; set; }
+            = new List<ProjectTeamMember>()
+;
     }
 }

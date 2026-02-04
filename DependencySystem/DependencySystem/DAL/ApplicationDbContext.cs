@@ -80,6 +80,18 @@ namespace DependencySystem.DAL   // or whatever namespace you use
     .WithMany(m => m.OutgoingDependencies)
     .HasForeignKey(d => d.SourceModuleID)
     .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<ProjectTeamMember>()
+    .HasKey(x => new { x.ProjectID, x.UserID });
+
+            builder.Entity<ProjectTeamMember>()
+                .HasOne(x => x.Project)
+                .WithMany(p => p.ProjectTeamMembers)
+                .HasForeignKey(x => x.ProjectID);
+
+            builder.Entity<ProjectTeamMember>()
+                .HasOne(x => x.User)
+                .WithMany(u => u.ProjectTeamMembers)
+                .HasForeignKey(x => x.UserID);
 
             builder.Entity<Dependency>()
                 .HasOne(d => d.TargetModule)
