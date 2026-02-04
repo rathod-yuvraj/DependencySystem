@@ -23,11 +23,18 @@ namespace DependencySystem.Services.Companies
 
         public async Task<Company> CreateAsync(CompanyCreateDto dto)
         {
+            var exists = await _context.Companies
+                .AnyAsync(c => c.CompanyName == dto.CompanyName);
+
+            if (exists)
+                throw new Exception("Company already exists.");
+
             var company = new Company { CompanyName = dto.CompanyName };
             _context.Companies.Add(company);
             await _context.SaveChangesAsync();
             return company;
         }
+
 
         public async Task<bool> DeleteAsync(int id)
         {
