@@ -4,11 +4,12 @@ bin/
 obj/
 *.user
 *.suo
-
+.env
 # Logs
 *.log
-
+.env
 # Rider / VS Code
 .idea/
 .vscode/
+appsettings.json
 /appsettings.json
