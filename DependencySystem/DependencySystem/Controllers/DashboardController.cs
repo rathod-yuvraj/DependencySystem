@@ -10,22 +10,22 @@ namespace DependencySystem.Controllers
     public class DashboardController : ControllerBase
     {
         [HttpGet("admin")]
-        [Authorize(Roles = AppRoles.Admin)]
+        //[Authorize(Roles = AppRoles.Admin)]
         public IActionResult AdminDashboard()
             => Ok("✅ Welcome Admin Dashboard");
 
         [HttpGet("manager")]
-        [Authorize(Roles = AppRoles.Manager)]
+        //[Authorize(Roles = AppRoles.Manager)]
         public IActionResult ManagerDashboard()
             => Ok("✅ Welcome Manager Dashboard");
 
         [HttpGet("developer")]
-        [Authorize(Roles = AppRoles.Developer)]
+        //[Authorize(Roles = AppRoles.Developer)]
         public IActionResult DeveloperDashboard()
             => Ok("✅ Welcome Developer Dashboard");
 
         [HttpGet("maintainer")]
-        [Authorize(Roles = AppRoles.Maintainer)]
+        //[Authorize(Roles = AppRoles.Maintainer)]
         public IActionResult MaintainerDashboard()
             => Ok("✅ Welcome Maintainer Dashboard");
     }

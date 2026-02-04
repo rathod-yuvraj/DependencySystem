@@ -7,7 +7,7 @@ namespace DependencySystem.Controllers
 {
     [Route("api/company")]
     [ApiController]
-    [Authorize] // ✅ only logged-in users
+    //[Authorize] // ✅ only logged-in users
     public class CompanyController : ControllerBase
     {
         private readonly ICompanyService _companyService;

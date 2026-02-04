@@ -18,12 +18,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
+
+// LOAD ENV (.env FIRST)
+DotNetEnv.Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
-// ============================
-// LOAD ENV (.env FIRST)
-// ============================
-DotNetEnv.Env.Load();
+//// ============================
+//// LOAD ENV (.env FIRST)
+//// ============================
+//DotNetEnv.Env.Load();
 
 // ============================
 // API VERSIONING

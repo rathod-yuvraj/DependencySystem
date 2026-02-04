@@ -7,7 +7,7 @@ namespace DependencySystem.Controllers
 {
     [Route("api/project")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class ProjectController : ControllerBase
     {
         private readonly IProjectService _projectService;

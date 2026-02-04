@@ -7,7 +7,7 @@ namespace DependencySystem.Controllers
 {
     [Route("api/department")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentService _departmentService;

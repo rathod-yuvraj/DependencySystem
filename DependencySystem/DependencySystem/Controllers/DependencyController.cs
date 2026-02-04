@@ -7,7 +7,7 @@ namespace DependencySystem.Controllers
 {
     [Route("api/dependency")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class DependencyController : ControllerBase
     {
         private readonly IDependencyService _service;
