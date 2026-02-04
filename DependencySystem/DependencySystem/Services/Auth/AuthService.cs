@@ -265,5 +265,84 @@ namespace DependencySystem.Services.Auth
             };
         }
 
+        public async Task<AuthResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return new AuthResponseDto { Success = false, Message = "User not found." };
+
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            var oldOtp = await _context.OtpVerifications
+                .FirstOrDefaultAsync(x => x.Email == dto.Email && !x.IsUsed);
+
+            if (oldOtp != null)
+                _context.OtpVerifications.Remove(oldOtp);
+
+            var otpEntity = new OtpVerification
+            {
+                Email = dto.Email,
+                OtpCode = otp,
+                ExpiryTime = DateTime.UtcNow.AddMinutes(5),
+                IsUsed = false
+            };
+
+            await _context.OtpVerifications.AddAsync(otpEntity);
+            await _context.SaveChangesAsync();
+
+            await _emailService.SendEmailAsync(
+                dto.Email,
+                "Password Reset OTP",
+                $"<h3>Your OTP</h3><p><b>{otp}</b> (valid for 5 minutes)</p>"
+            );
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Password reset OTP sent to email."
+            };
+        }
+
+
+
+
+        public async Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordRequestDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return new AuthResponseDto { Success = false, Message = "User not found." };
+
+            var otpRecord = await _context.OtpVerifications.FirstOrDefaultAsync(x =>
+                x.Email == dto.Email &&
+                x.OtpCode == dto.OtpCode &&
+                !x.IsUsed);
+
+            if (otpRecord == null || otpRecord.ExpiryTime < DateTime.UtcNow)
+                return new AuthResponseDto { Success = false, Message = "Invalid or expired OTP." };
+
+            otpRecord.IsUsed = true;
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = string.Join(" | ", result.Errors.Select(e => e.Description))
+                };
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Password reset successfully."
+            };
+        }
+
+
     }
 }
