@@ -31,12 +31,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     ));
 
 
+
 // ✅ Identity setup
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddScoped<DependencySystem.Services.Auth.IAuthService, DependencySystem.Services.Auth.AuthService>();
-builder.Services.AddScoped<IAuthorizationHandler, ProjectRoleHandler>();
+
 
 builder.Services.AddScoped<DependencySystem.Services.Auth.IEmailService, DependencySystem.Services.Auth.EmailService>();
 builder.Services.AddScoped<DependencySystem.Services.Companies.ICompanyService,
@@ -62,7 +64,9 @@ builder.Services.AddScoped<
     DependencySystem.Services.Audit.IAuditService,
     DependencySystem.Services.Audit.AuditService>();
 
-builder.Services.AddSingleton<IAuthorizationHandler, ProjectRoleHandler>();
+//builder.Services.AddSingleton<IAuthorizationHandler, ProjectRoleHandler>();
+
+builder.Services.AddScoped<IAuthorizationHandler, ProjectRoleHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -118,11 +122,14 @@ if (app.Environment.IsDevelopment())
 }
 
 
+
 using (var scope = app.Services.CreateScope())
 {
     await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
     await AdminSeeder.SeedAdminAsync(scope.ServiceProvider, builder.Configuration);
 }
+
+
 
 app.UseHttpsRedirection();
 app.UseMiddleware<DependencySystem.Middlewares.ExceptionMiddleware>();
