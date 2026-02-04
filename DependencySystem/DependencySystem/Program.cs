@@ -98,38 +98,36 @@ builder.Services.AddAuthorization(options =>
 // ============================
 // JWT AUTHENTICATION
 // ============================
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+
 var jwtKey =
     Environment.GetEnvironmentVariable("JWT_KEY")
-    ?? throw new Exception("JWT_KEY not found");
+    ?? throw new Exception("JWT_KEY is missing");
 
-var jwtIssuer =
-    builder.Configuration["Jwt:Issuer"]
-    ?? throw new Exception("Jwt:Issuer not configured");
+Console.WriteLine($"JWT KEY LENGTH: {jwtKey.Length}");
 
-var jwtAudience =
-    builder.Configuration["Jwt:Audience"]
-    ?? throw new Exception("Jwt:Audience not configured");
+var key = Encoding.UTF8.GetBytes(jwtKey);
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.RequireHttpsMetadata = true;
-        options.SaveToken = true;
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
 
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.Zero, // ⬅ no grace period
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});
 
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey))
-        };
-    });
 
 // ============================
 // MVC + SWAGGER
