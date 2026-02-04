@@ -4,7 +4,7 @@ bin/
 obj/
 *.user
 *.suo
-.env
+*.env
 # Logs
 *.log
 .env
