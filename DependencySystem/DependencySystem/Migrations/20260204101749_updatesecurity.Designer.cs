@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DependencySystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260203125444_AddTechnologyTables")]
-    partial class AddTechnologyTables
+    [Migration("20260204101749_updatesecurity")]
+    partial class updatesecurity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -90,6 +90,42 @@ namespace DependencySystem.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.AuditLog", b =>
+                {
+                    b.Property<int>("AuditLogID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AuditLogID"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("AuditLogID");
+
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("DependencySystem.Models.Company", b =>

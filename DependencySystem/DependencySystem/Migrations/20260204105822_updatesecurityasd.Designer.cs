@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DependencySystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260203130048_AddAuditLogTable")]
-    partial class AddAuditLogTable
+    [Migration("20260204105822_updatesecurityasd")]
+    partial class updatesecurityasd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

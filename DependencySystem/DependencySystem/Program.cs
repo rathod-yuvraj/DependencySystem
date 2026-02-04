@@ -1,18 +1,33 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.Helper;
-//using DependencySystem.Helpers;
 using DependencySystem.Models;
+using DependencySystem.Services.Auth;
+using DependencySystem.Services.Audit;
+using DependencySystem.Services.Companies;
+using DependencySystem.Services.Departments;
+using DependencySystem.Services.Dependencies;
+using DependencySystem.Services.Modules;
+using DependencySystem.Services.Projects;
+using DependencySystem.Services.Tasks;
+using DependencySystem.Services.Teams;
+using DependencySystem.Services.Technologies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-//using DependencySystem.Helper;
-using System;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ============================
+// LOAD ENV (.env FIRST)
+// ============================
+DotNetEnv.Env.Load();
+
+// ============================
+// API VERSIONING
+// ============================
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
@@ -20,120 +35,152 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
 });
 
-// ✅ DB Connection
+// ============================
+// DATABASE
+// ============================
+var connectionString =
+    Environment.GetEnvironmentVariable("DB_CONNECTION")
+    ?? throw new Exception("DB_CONNECTION not found");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(
-            builder.Configuration.GetConnectionString("DefaultConnection")
-        )
-    ));
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+);
 
+// ============================
+// IDENTITY (HARDENED)
+// ============================
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
 
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
-// ✅ Identity setup
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+// ============================
+// APPLICATION SERVICES
+// ============================
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
-builder.Services.AddScoped<DependencySystem.Services.Auth.IAuthService, DependencySystem.Services.Auth.AuthService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IModuleService, ModuleService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IDependencyService, DependencyService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ITechnologyService, TechnologyService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
-
-builder.Services.AddScoped<DependencySystem.Services.Auth.IEmailService, DependencySystem.Services.Auth.EmailService>();
-builder.Services.AddScoped<DependencySystem.Services.Companies.ICompanyService,
-                           DependencySystem.Services.Companies.CompanyService>();
-builder.Services.AddScoped<DependencySystem.Services.Departments.IDepartmentService,
-                           DependencySystem.Services.Departments.DepartmentService>();
-builder.Services.AddScoped<DependencySystem.Services.Projects.IProjectService,
-                           DependencySystem.Services.Projects.ProjectService>();
-builder.Services.AddScoped<DependencySystem.Services.Modules.IModuleService,
-                           DependencySystem.Services.Modules.ModuleService>();
-builder.Services.AddScoped<DependencySystem.Services.Tasks.ITaskService,
-                           DependencySystem.Services.Tasks.TaskService>();
-builder.Services.AddScoped<
-    DependencySystem.Services.Dependencies.IDependencyService,
-    DependencySystem.Services.Dependencies.DependencyService>();
-builder.Services.AddScoped<
-    DependencySystem.Services.Teams.ITeamService,
-    DependencySystem.Services.Teams.TeamService>();
-builder.Services.AddScoped<
-    DependencySystem.Services.Technologies.ITechnologyService,
-    DependencySystem.Services.Technologies.TechnologyService>();
-builder.Services.AddScoped<
-    DependencySystem.Services.Audit.IAuditService,
-    DependencySystem.Services.Audit.AuditService>();
-
-//builder.Services.AddSingleton<IAuthorizationHandler, ProjectRoleHandler>();
-
+// ============================
+// AUTHORIZATION
+// ============================
 builder.Services.AddScoped<IAuthorizationHandler, ProjectRoleHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ProjectManagerOnly",
-        policy => policy.Requirements.Add(new ProjectRoleRequirement("Manager")));
+        p => p.Requirements.Add(new ProjectRoleRequirement("Manager")));
 
     options.AddPolicy("ProjectManagerOrMaintainer",
-        policy => policy.Requirements.Add(new ProjectRoleRequirement("Manager", "Maintainer")));
+        p => p.Requirements.Add(new ProjectRoleRequirement("Manager", "Maintainer")));
 
     options.AddPolicy("ProjectAnyMember",
-        policy => policy.Requirements.Add(new ProjectRoleRequirement("Manager", "Developer", "Maintainer")));
+        p => p.Requirements.Add(new ProjectRoleRequirement("Manager", "Developer", "Maintainer")));
 });
 
+// ============================
+// JWT AUTHENTICATION
+// ============================
+var jwtKey =
+    Environment.GetEnvironmentVariable("JWT_KEY")
+    ?? throw new Exception("JWT_KEY not found");
 
+var jwtIssuer =
+    builder.Configuration["Jwt:Issuer"]
+    ?? throw new Exception("Jwt:Issuer not configured");
 
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+var jwtAudience =
+    builder.Configuration["Jwt:Audience"]
+    ?? throw new Exception("Jwt:Audience not configured");
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key)
-    };
-});
+        options.RequireHttpsMetadata = true;
+        options.SaveToken = true;
 
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero, // ⬅ no grace period
 
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+// ============================
+// MVC + SWAGGER
+// ============================
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// ============================
+// AUTO MIGRATIONS + SEEDING
+// ============================
 using (var scope = app.Services.CreateScope())
 {
-    await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
+    try
+    {
+        Console.WriteLine("🟡 Startup: migrating & seeding...");
+
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        await context.Database.MigrateAsync();
+
+        await RoleSeeder.SeedRolesAsync(services);
+        await AdminSeeder.SeedAdminAsync(services, builder.Configuration);
+
+        if (!await context.Companies.AnyAsync())
+        {
+            Console.WriteLine("🚀 Seeding demo data...");
+            await DemoDataSeeder.SeedDemoDataAsync(services, builder.Configuration);
+        }
+
+        Console.WriteLine("🟢 Startup completed");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("🔴 Startup failed");
+        Console.WriteLine(ex);
+        throw;
+    }
 }
+
+// ============================
+// MIDDLEWARE PIPELINE
+// ============================
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-
-
-using (var scope = app.Services.CreateScope())
-{
-    await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
-    await AdminSeeder.SeedAdminAsync(scope.ServiceProvider, builder.Configuration);
-
-    // ✅ NEW
-    await DemoDataSeeder.SeedDemoDataAsync(scope.ServiceProvider, builder.Configuration);
-}
-
-
-
 
 app.UseHttpsRedirection();
 app.UseMiddleware<DependencySystem.Middlewares.ExceptionMiddleware>();
@@ -142,5 +189,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();
