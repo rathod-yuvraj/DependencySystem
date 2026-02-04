@@ -14,14 +14,43 @@ namespace DependencySystem.Services.Companies
             _context = context;
         }
 
-        public async Task<List<Company>> GetAllAsync()
-            => await _context.Companies.Include(x => x.Departments).ToListAsync();
+        public async Task<List<CompanyResponseDto>> GetAllAsync()
+        {
+             return await _context.Companies.Include(c => c.Departments).Select(c=>new CompanyResponseDto
+             {
+                 CompanyID = c.CompanyID,
+                 CompanyName = c.CompanyName,
+                 Departments = c.Departments.Select(d => new DepartmentSimpleDto
+                 {
+                     DepartmentID = d.DepartmentID,
+                     DepartmentName = d.DepartmentName,
+                     CompanyID = d.CompanyID
+                 }).ToList()
 
-        public async Task<Company?> GetByIdAsync(int id)
-            => await _context.Companies.Include(x => x.Departments)
-                    .FirstOrDefaultAsync(x => x.CompanyID == id);
+             } ).ToListAsync();
 
-        public async Task<Company> CreateAsync(CompanyCreateDto dto)
+        }
+
+
+        public async Task<CompanyResponseDto?> GetByIdAsync(int id)
+        {
+            return await _context.Companies
+                .Include(c => c.Departments)
+                .Where(c => c.CompanyID == id)
+                .Select(c => new CompanyResponseDto
+                {
+                    CompanyID = c.CompanyID,
+                    CompanyName = c.CompanyName,
+                    Departments = c.Departments.Select(d => new DepartmentSimpleDto
+                    {
+                        DepartmentID = d.DepartmentID,
+                        DepartmentName = d.DepartmentName,
+                        CompanyID = d.CompanyID
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+        }
+        public async Task<CompanyResponseDto> CreateAsync(CompanyCreateDto dto)
         {
             var exists = await _context.Companies
                 .AnyAsync(c => c.CompanyName == dto.CompanyName);
@@ -29,12 +58,21 @@ namespace DependencySystem.Services.Companies
             if (exists)
                 throw new Exception("Company already exists.");
 
-            var company = new Company { CompanyName = dto.CompanyName };
+            var company = new Models.Company
+            {
+                CompanyName = dto.CompanyName
+            };
+
             _context.Companies.Add(company);
             await _context.SaveChangesAsync();
-            return company;
-        }
 
+            return new CompanyResponseDto
+            {
+                CompanyID = company.CompanyID,
+                CompanyName = company.CompanyName,
+                Departments = new List<DepartmentSimpleDto>()
+            };
+        }
 
         public async Task<bool> DeleteAsync(int id)
         {
@@ -46,4 +84,5 @@ namespace DependencySystem.Services.Companies
             return true;
         }
     }
+
 }

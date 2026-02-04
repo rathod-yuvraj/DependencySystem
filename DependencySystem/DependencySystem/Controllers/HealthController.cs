@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DependencySystem.Controllers
 {
@@ -7,6 +8,7 @@ namespace DependencySystem.Controllers
     public class HealthController : ControllerBase
     {
         [HttpGet]
+        [Authorize]
         public IActionResult Check()
             => Ok(" DependencySystem API Running");
     }
