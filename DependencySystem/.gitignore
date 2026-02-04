@@ -11,3 +11,4 @@ obj/
 # Rider / VS Code
 .idea/
 .vscode/
+/appsettings.json
