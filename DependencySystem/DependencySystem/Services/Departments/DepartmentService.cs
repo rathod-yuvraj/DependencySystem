@@ -36,6 +36,35 @@ namespace DependencySystem.Services.Departments
                 })
                 .ToListAsync();
         }
+        public async Task<List<DepartmentResponseDto>> GetByCompanyIdAsync(int companyId)
+        {
+            var companyExists = await _context.Companies
+                .AnyAsync(c => c.CompanyID == companyId);
+
+            if (!companyExists)
+                throw new Exception("Company not found.");
+
+            return await _context.Departments
+                .Where(d => d.CompanyID == companyId)
+                .Include(d => d.Company)
+                .Include(d => d.Projects)
+                .Select(d => new DepartmentResponseDto
+                {
+                    DepartmentID = d.DepartmentID,
+                    DepartmentName = d.DepartmentName,
+                    Company = new CompanyMiniDto
+                    {
+                        CompanyID = d.Company.CompanyID,
+                        CompanyName = d.Company.CompanyName
+                    },
+                    Projects = d.Projects.Select(p => new ProjectMiniDto
+                    {
+                        ProjectID = p.ProjectID,
+                        ProjectName = p.ProjectName
+                    }).ToList()
+                })
+                .ToListAsync();
+        }
 
         public async Task<DepartmentResponseDto?> GetByIdAsync(int id)
         {
