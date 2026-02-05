@@ -1,6 +1,10 @@
 # DependencySystem
 
 > **Enterprise-grade Project, Module, and Task Dependency Management System**
+# Software Dependency Management System
+
+An enterprise-grade ASP.NET Core Web API designed to manage companies, departments, projects, modules, tasks, and software dependencies with role-based authentication and development-only data seeding.
+### Scalable Project, Module, and Dependency Tracking Platform
 
 DependencySystem is a **portfolio-grade, real-world organizational dependency management platform** developed as part of the **PG-DAC (Post Graduate Diploma in Advanced Computing)** course. It models how modern software companies manage **companies, departments, projects, modules, tasks, teams, and complex dependencies**.
 
