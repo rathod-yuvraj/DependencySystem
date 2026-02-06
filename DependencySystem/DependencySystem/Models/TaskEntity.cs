@@ -6,6 +6,11 @@ namespace DependencySystem.Models
 {
     public class TaskEntity
     {
+        public string? AssignedToUserId { get; set; }
+
+        [ForeignKey(nameof(AssignedToUserId))]
+        public ApplicationUser? AssignedToUser { get; set; }
+
         [Key]
         public int TaskID { get; set; }
 

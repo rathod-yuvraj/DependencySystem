@@ -5,5 +5,7 @@ namespace DependencySystem.Services.Dashboard
     public interface IDashboardService
     {
         Task<DashboardSummaryDto> GetProjectDashboardAsync(int projectId);
+        Task<ManagerDashboardDto?> GetManagerDashboardAsync(int projectId);
+
     }
 }

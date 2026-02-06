@@ -5,10 +5,16 @@ namespace DependencySystem.Services.Tasks
 {
     public interface ITaskService
     {
-        Task<List<TaskEntity>> GetAllAsync();
-        Task<TaskEntity?> GetByIdAsync(int id);
-        Task<List<TaskEntity>> GetByModuleIdAsync(int moduleId);
-        Task<TaskEntity> CreateAsync(TaskCreateDto dto);
+
+        
+        Task<List<TaskResponseDto>> GetByModuleIdAsync(int moduleId);
+
+        
+        Task<List<TaskResponseDto>> GetAllAsync();
+        Task<TaskResponseDto?> GetByIdAsync(int id);
+       
+        Task<TaskResponseDto> CreateAsync(TaskCreateDto dto);
+        Task<TaskResponseDto?> UpdateAsync(int id, TaskUpdateDto dto);
         Task<bool> DeleteAsync(int id);
     }
 }

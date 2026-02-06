@@ -11,5 +11,10 @@ namespace DependencySystem.Services.Projects
         Task<List<Project>> GetByDepartmentIdAsync(int departmentId);
         Task<Project> CreateAsync(ProjectCreateDto dto);
         Task<bool> DeleteAsync(int id);
+        
+        Task<Project?> UpdateAsync(int id, ProjectUpdateDto dto);
+        
+       
+ 
     }
 }

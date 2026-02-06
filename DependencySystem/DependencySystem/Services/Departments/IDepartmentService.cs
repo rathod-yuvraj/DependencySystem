@@ -10,5 +10,7 @@ namespace DependencySystem.Services.Departments
         Task<DepartmentResponseDto?> GetByIdAsync(int id);
         Task<DepartmentResponseDto> CreateAsync(DepartmentCreateDto dto);
         Task<bool> DeleteAsync(int id);
+        Task<DepartmentDashboardDto?> GetDepartmentDashboardAsync(int departmentId);
+
     }
 }

@@ -96,5 +96,56 @@ public async Task<List<Project>> GetAllAsync()
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<Project?> UpdateAsync(int id, ProjectUpdateDto dto)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null) return null;
+
+            var deptExists = await _context.Departments
+                .AnyAsync(d => d.DepartmentID == dto.DepartmentID);
+
+            if (!deptExists)
+                throw new Exception("Department not found.");
+
+            project.ProjectName = dto.ProjectName;
+            project.DepartmentID = dto.DepartmentID;
+
+            await _context.SaveChangesAsync();
+            return project;
+        }
+
+        //public async Task<ProjectTreeResponseDto?> GetProjectTreeAsync(int projectId)
+        //{
+        //    return await _context.Projects
+        //        .Where(p => p.ProjectID == projectId)
+        //        .Select(p => new ProjectTreeResponseDto
+        //        {
+        //            ProjectID = p.ProjectID,
+        //            ProjectName = p.ProjectName,
+
+        //            Department = new DepartmentMiniDto
+        //            {
+        //                DepartmentID = p.Department!.DepartmentID,
+        //                DepartmentName = p.Department.DepartmentName
+        //            },
+
+        //            Modules = p.Modules.Select(m => new ModuleTreeDto
+        //            {
+        //                ModuleID = m.ModuleID,
+        //                ModuleName = m.ModuleName,
+        //                Status = m.Status.ToString(),
+
+        //                Tasks = m.Tasks.Select(t => new TaskTreeDto
+        //                {
+        //                    TaskID = t.TaskID,
+        //                    Title = t.Title,
+        //                    Status = t.Status.ToString()
+        //                }).ToList()
+
+        //            }).ToList()
+        //        })
+        //        .FirstOrDefaultAsync();
+        //}
+
     }
 }

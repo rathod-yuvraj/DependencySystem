@@ -22,38 +22,42 @@ namespace DependencySystem.Controllers
             _dashboardService = dashboardService;
             _roledashboardService = roledashboardService;
         }
-
+    
+        //[Authorize(Roles = "Manager")]
+        [HttpGet("manager/project/{projectId}")]
+        public async Task<IActionResult> ManagerDashboard(int projectId)
+        {
+            return Ok(await _roledashboardService.GetManagerDashboardAsync(projectId));
+        }
         [HttpGet("project/{projectId}/summary")]
         public async Task<IActionResult> GetProjectDashboard(int projectId)
         {
             return Ok(await _dashboardService.GetProjectDashboardAsync(projectId));
         }
 
-        [Authorize(Roles = "Admin")]
+
+        //[Authorize(Roles = "Admin")]
         [HttpGet("admin")]
         public async Task<IActionResult> AdminDashboard()
         {
             return Ok(await _roledashboardService.GetAdminDashboardAsync());
         }
 
-        [Authorize(Roles = "Manager")]
-        [HttpGet("manager/project/{projectId}")]
-        public async Task<IActionResult> ManagerDashboard(int projectId)
-        {
-            return Ok(await _roledashboardService.GetManagerDashboardAsync(projectId));
-        }
+       
 
-        [Authorize(Roles = "Developer")]
+        //[Authorize(Roles = "Developer")]
         [HttpGet("developer")]
         public async Task<IActionResult> DeveloperDashboard()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
             return Ok(await _roledashboardService.GetDeveloperDashboardAsync(userId));
         }
+      
 
         [HttpGet("maintainer")]
         //[Authorize(Roles = AppRoles.Maintainer)]
         public IActionResult MaintainerDashboard()
             => Ok("✅ Welcome Maintainer Dashboard");
     }
+
 }

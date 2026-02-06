@@ -9,5 +9,9 @@ namespace DependencySystem.Services.Companies
         Task<CompanyResponseDto?> GetByIdAsync(int id);
         Task<CompanyResponseDto> CreateAsync(CompanyCreateDto dto);
         Task<bool> DeleteAsync(int id);
+        Task<List<CompanyAnalyticsDto>> GetCompanyAnalyticsAsync();
+        Task<CompanyDetailAnalyticsDto?> GetCompanyDetailAnalyticsAsync(int companyId);
+        Task<CompanyDashboardDto?> GetCompanyDashboardAsync(int companyId);
+
     }
 }

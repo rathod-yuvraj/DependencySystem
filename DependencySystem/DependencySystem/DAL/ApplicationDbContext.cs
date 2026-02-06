@@ -165,6 +165,11 @@ namespace DependencySystem.DAL   // or whatever namespace you use
             builder.Entity<TaskEntity>()
                 .Property(t => t.Status)
                 .HasConversion<string>();
+            builder.Entity<TaskEntity>()
+    .HasOne(t => t.AssignedToUser)
+    .WithMany()
+    .HasForeignKey(t => t.AssignedToUserId)
+    .OnDelete(DeleteBehavior.SetNull);
 
         }
 

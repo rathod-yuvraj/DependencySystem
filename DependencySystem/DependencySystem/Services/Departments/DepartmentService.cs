@@ -131,5 +131,81 @@ namespace DependencySystem.Services.Departments
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<DepartmentDashboardDto?> GetDepartmentDashboardAsync(int departmentId)
+        {
+            var department = await _context.Departments
+                .FirstOrDefaultAsync(d => d.DepartmentID == departmentId);
+
+            if (department == null) return null;
+
+            // ===== Projects =====
+            var projectQuery = _context.Projects
+                .Where(p => p.DepartmentID == departmentId);
+
+            var projectCount = await projectQuery.CountAsync();
+
+            // ===== Modules =====
+            var moduleQuery = _context.Modules
+                .Where(m => m.Project.DepartmentID == departmentId);
+
+            var moduleCount = await moduleQuery.CountAsync();
+
+            // ===== Tasks =====
+            var taskQuery = _context.Tasks
+                .Where(t => t.Module.Project.DepartmentID == departmentId);
+
+            var taskCount = await taskQuery.CountAsync();
+            var completedTasks = await taskQuery.CountAsync(t => t.Status == Models.enums.TaskStatuss.Completed);
+            var pendingTasks = taskCount - completedTasks;
+
+            // ===== Developers =====
+            var developerCount = await _context.ProjectTeamMembers
+                .Where(pt => pt.Project.DepartmentID == departmentId)
+                .Select(pt => pt.UserID)
+                .Distinct()
+                .CountAsync();
+
+            // ===== Task Status Chart =====
+            var taskStatusChart = new List<ChartItemDto>
+    {
+        new() { Name = "Completed", Value = completedTasks },
+        new() { Name = "Pending", Value = pendingTasks }
+    };
+
+            // ===== Developer Workload =====
+            var developerWorkload = await _context.Tasks
+    .Where(t => t.Module.Project.DepartmentID == departmentId && t.AssignedToUserId != null)
+    .GroupBy(t => t.AssignedToUserId!)
+    .Select(g => new ChartItemDto
+    {
+        Name = g.Key,
+        Value = g.Count()
+    })
+    .ToListAsync();
+
+
+            // ===== Project Status (simple example) =====
+            var projectStatusChart = new List<ChartItemDto>
+    {
+        new() { Name = "Total Projects", Value = projectCount }
+    };
+
+            return new DepartmentDashboardDto
+            {
+                DepartmentName = department.DepartmentName,
+
+                ProjectCount = projectCount,
+                ModuleCount = moduleCount,
+                TaskCount = taskCount,
+                CompletedTasks = completedTasks,
+                PendingTasks = pendingTasks,
+                DeveloperCount = developerCount,
+
+                ProjectStatusChart = projectStatusChart,
+                TaskStatusChart = taskStatusChart,
+                DeveloperWorkloadChart = developerWorkload
+            };
+        }
+
     }
 }

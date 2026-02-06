@@ -83,6 +83,168 @@ namespace DependencySystem.Services.Companies
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<CompanyDetailAnalyticsDto?> GetCompanyDetailAnalyticsAsync(int companyId)
+        {
+            var company = await _context.Companies
+                .Where(c => c.CompanyID == companyId)
+                .Select(c => new CompanyDetailAnalyticsDto
+                {
+                    CompanyName = c.CompanyName,
+
+                    DepartmentCount = c.Departments.Count(),
+
+                    ProjectCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .Count(),
+
+                    ModuleCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .Count(),
+
+                    TaskCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .SelectMany(m => m.Tasks)
+                        .Count(),
+
+                    DeveloperCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.ProjectTeamMembers)
+                        .Select(ptm => ptm.UserID)
+                        .Distinct()
+                        .Count(),
+
+                    // ===== Task Status Pie =====
+                    TaskStatusChart = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .SelectMany(m => m.Tasks)
+                        .GroupBy(t => t.Status)
+                        .Select(g => new ChartItemDto
+                        {
+                            Name = g.Key.ToString(),
+                            Value = g.Count()
+                        })
+                        .ToList(),
+
+                    // ===== Projects per Department =====
+                    ProjectsPerDepartmentChart = c.Departments
+                        .Select(d => new ChartItemDto
+                        {
+                            Name = d.DepartmentName,
+                            Value = d.Projects.Count()
+                        })
+                        .ToList(),
+
+                    // ===== Developer workload =====
+                    DeveloperWorkloadChart = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.ProjectTeamMembers)
+                        .GroupBy(ptm => ptm.User.UserName)
+                        .Select(g => new ChartItemDto
+                        {
+                            Name = g.Key!,
+                            Value = g.Count()
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            return company;
+        }
+        public async Task<CompanyDashboardDto?> GetCompanyDashboardAsync(int companyId)
+        {
+            return await _context.Companies
+                .Where(c => c.CompanyID == companyId)
+                .Select(c => new CompanyDashboardDto
+                {
+                    CompanyName = c.CompanyName,
+
+                    DepartmentCount = c.Departments.Count(),
+
+                    ProjectCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .Count(),
+
+                    ModuleCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .Count(),
+
+                    TaskCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .SelectMany(m => m.Tasks)
+                        .Count(),
+
+                    DeveloperCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.ProjectTeamMembers)
+                        .Select(ptm => ptm.UserID)
+                        .Distinct()
+                        .Count(),
+
+                    // ===== Projects per Department =====
+                    ProjectsPerDepartment = c.Departments
+                        .Select(d => new ChartItemDto
+                        {
+                            Name = d.DepartmentName,
+                            Value = d.Projects.Count()
+                        })
+                        .ToList(),
+
+                    // ===== Task Status Pie =====
+                    TaskStatus = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .SelectMany(m => m.Tasks)
+                        .GroupBy(t => t.Status)
+                        .Select(g => new ChartItemDto
+                        {
+                            Name = g.Key.ToString(),
+                            Value = g.Count()
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<List<CompanyAnalyticsDto>> GetCompanyAnalyticsAsync()
+        {
+            return await _context.Companies
+                .Select(c => new CompanyAnalyticsDto
+                {
+                    CompanyID = c.CompanyID,
+                    CompanyName = c.CompanyName,
+
+                    DepartmentCount = c.Departments.Count(),
+
+                    ProjectCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .Count(),
+
+                    ModuleCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .Count(),
+
+                    TaskCount = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.Modules)
+                        .SelectMany(m => m.Tasks)
+                        .Count(),
+
+                    Developers = c.Departments
+                        .SelectMany(d => d.Projects)
+                        .SelectMany(p => p.ProjectTeamMembers)
+                        .Select(ptm => ptm.User.UserName!)
+                        .Distinct()
+                        .ToList()
+                })
+                .ToListAsync();
+        }
+
     }
 
 }

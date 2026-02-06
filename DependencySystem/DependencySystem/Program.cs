@@ -1,5 +1,6 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.Helper;
+using DependencySystem.Hubs;
 using DependencySystem.Models;
 using DependencySystem.Services.Audit;
 using DependencySystem.Services.Auth;
@@ -84,8 +85,11 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IDependencyService, DependencyService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ITechnologyService, TechnologyService>();
-builder.Services.AddScoped<IAuditService, AuditService>();
+//builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IRoleDashboardService, RoleDashboardService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddSignalR();
+
 
 // ============================
 // AUTHORIZATION
@@ -107,13 +111,17 @@ builder.Services.AddAuthorization(options =>
 // ============================
 // JWT AUTHENTICATION
 // ============================
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-
 var jwtKey =
     Environment.GetEnvironmentVariable("JWT_KEY")
-    ?? throw new Exception("JWT_KEY is missing");
+    ?? throw new Exception("JWT_KEY missing");
 
-Console.WriteLine($"JWT KEY LENGTH: {jwtKey.Length}");
+var jwtIssuer =
+    Environment.GetEnvironmentVariable("JWT_ISSUER")
+    ?? throw new Exception("JWT_ISSUER missing");
+
+var jwtAudience =
+    Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+    ?? throw new Exception("JWT_AUDIENCE missing");
 
 var key = Encoding.UTF8.GetBytes(jwtKey);
 
@@ -130,12 +138,14 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key)
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ClockSkew = TimeSpan.Zero
     };
+
 });
+
 
 
 // ============================
@@ -159,11 +169,33 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:5173", // Vite
+                "http://localhost:3000"  // CRA
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+
 var app = builder.Build();
 
 // ============================
 // AUTO MIGRATIONS + SEEDING
 // ============================
+//builder.Services.AddControllers()
+//    .AddJsonOptions(options =>
+//    {
+//        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+//    });
 
 using (var scope = app.Services.CreateScope())
 {
@@ -187,11 +219,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+app.MapHub<ProjectHub>("/hubs/project");
+
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend"); // ✅ ADD THIS LINE
+
 app.UseMiddleware<DependencySystem.Middlewares.ExceptionMiddleware>();
 
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseAuthentication();   // FIRST
+app.UseAuthorization();    // SECOND
 
 app.MapControllers();
 app.Run();

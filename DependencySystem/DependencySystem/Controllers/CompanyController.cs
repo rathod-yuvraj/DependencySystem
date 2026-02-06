@@ -17,6 +17,19 @@ namespace DependencySystem.Controllers
             _companyService = companyService;
         }
 
+        [HttpGet("{id}/detail-analytics")]
+        public async Task<IActionResult> GetDetailAnalytics(int id)
+        {
+            var result = await _companyService.GetCompanyDetailAnalyticsAsync(id);
+            return result == null ? NotFound() : Ok(result);
+        }
+
+        [HttpGet("analytics")]
+        public async Task<IActionResult> GetCompanyAnalytics()
+        {
+            return Ok(await _companyService.GetCompanyAnalyticsAsync());
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -43,5 +56,12 @@ namespace DependencySystem.Controllers
             var deleted = await _companyService.DeleteAsync(id);
             return deleted ? Ok("Deleted") : NotFound();
         }
+        [HttpGet("{id}/dashboard")]
+        public async Task<IActionResult> GetCompanyDashboard(int id)
+        {
+            var result = await _companyService.GetCompanyDashboardAsync(id);
+            return result == null ? NotFound() : Ok(result);
+        }
+
     }
 }

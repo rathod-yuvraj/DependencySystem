@@ -42,5 +42,13 @@ namespace DependencySystem.Controllers
             var deleted = await _moduleService.DeleteAsync(id);
             return deleted ? Ok("Deleted") : NotFound();
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, ModuleUpdateDto dto)
+        {
+            var updated = await _moduleService.UpdateAsync(id, dto);
+            return updated == null ? NotFound() : Ok(updated);
+        }
+
     }
 }

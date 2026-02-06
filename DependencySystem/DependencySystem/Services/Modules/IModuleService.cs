@@ -10,5 +10,7 @@ namespace DependencySystem.Services.Modules
         Task<List<Module>> GetByProjectIdAsync(int projectId);
         Task<Module> CreateAsync(ModuleCreateDto dto);
         Task<bool> DeleteAsync(int id);
+        Task<Module?> UpdateAsync(int id, ModuleUpdateDto dto);
+
     }
 }

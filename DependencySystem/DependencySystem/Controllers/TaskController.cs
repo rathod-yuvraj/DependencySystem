@@ -17,9 +17,13 @@ namespace DependencySystem.Controllers
             _taskService = taskService;
         }
 
+        /* ================= GET ALL ================= */
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
             => Ok(await _taskService.GetAllAsync());
+
+        /* ================= GET BY ID ================= */
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -28,13 +32,31 @@ namespace DependencySystem.Controllers
             return task == null ? NotFound() : Ok(task);
         }
 
+        /* ================= GET BY MODULE ================= */
+
         [HttpGet("module/{moduleId}")]
         public async Task<IActionResult> GetByModule(int moduleId)
             => Ok(await _taskService.GetByModuleIdAsync(moduleId));
 
+        /* ================= CREATE ================= */
+
         [HttpPost]
         public async Task<IActionResult> Create(TaskCreateDto dto)
-            => Ok(await _taskService.CreateAsync(dto));
+        {
+            var created = await _taskService.CreateAsync(dto);
+            return Ok(created);
+        }
+
+        /* ================= UPDATE ================= */
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, TaskUpdateDto dto)
+        {
+            var updated = await _taskService.UpdateAsync(id, dto);
+            return updated == null ? NotFound() : Ok(updated);
+        }
+
+        /* ================= DELETE ================= */
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

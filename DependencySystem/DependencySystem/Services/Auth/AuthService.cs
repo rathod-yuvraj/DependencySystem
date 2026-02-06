@@ -319,10 +319,15 @@ namespace DependencySystem.Services.Auth
         {
             var jwt = _config.GetSection("Jwt");
 
-            var key = Environment.GetEnvironmentVariable("JWT_KEY")
-                      ?? jwt["Key"]
-                      ?? throw new Exception("JWT key missing");
+            var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
+    ?? throw new Exception("JWT_KEY not configured");
+            var jwtIssuer =
+    Environment.GetEnvironmentVariable("JWT_ISSUER")
+    ?? throw new Exception("JWT_ISSUER missing");
 
+            var jwtAudience =
+                Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                ?? throw new Exception("JWT_AUDIENCE missing");
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, user.Id),
@@ -334,12 +339,12 @@ namespace DependencySystem.Services.Auth
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
             var token = new JwtSecurityToken(
-                issuer: jwt["Issuer"],
-                audience: jwt["Audience"],
+                issuer: jwtIssuer,
+                audience: jwtAudience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(double.Parse(jwt["DurationInMinutes"]!)),
                 signingCredentials: new SigningCredentials(
-                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
                     SecurityAlgorithms.HmacSha256)
             );
 
@@ -384,10 +389,8 @@ namespace DependencySystem.Services.Auth
             => new() { Success = false, Message = msg };
         private SymmetricSecurityKey GetJwtKey()
         {
-            var jwtKey =
-                Environment.GetEnvironmentVariable("JWT_KEY")
-                ?? _config["Jwt:Key"]
-                ?? throw new Exception("JWT key not configured");
+            var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
+    ?? throw new Exception("JWT_KEY not configured");
 
             return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         }
