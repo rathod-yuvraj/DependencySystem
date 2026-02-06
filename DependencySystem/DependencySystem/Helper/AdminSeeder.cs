@@ -11,7 +11,7 @@ namespace DependencySystem.Helper
         {
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
+            Console.WriteLine("Start Admin");
             // ✅ Ensure Admin role exists
             if (!await roleManager.RoleExistsAsync(AppRoles.Admin))
             {
@@ -43,6 +43,7 @@ namespace DependencySystem.Helper
                 throw new Exception("Admin seed failed: " + string.Join(" | ", result.Errors.Select(e => e.Description)));
 
             await userManager.AddToRoleAsync(adminUser, AppRoles.Admin);
+            Console.WriteLine("Adminsuccessfully");
         }
     }
 }

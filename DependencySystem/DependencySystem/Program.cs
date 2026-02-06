@@ -164,34 +164,18 @@ var app = builder.Build();
 // ============================
 // AUTO MIGRATIONS + SEEDING
 // ============================
+
 using (var scope = app.Services.CreateScope())
 {
-    try
-    {
-        Console.WriteLine("🟡 Startup: migrating & seeding...");
+    var services = scope.ServiceProvider;
+    var config = services.GetRequiredService<IConfiguration>();
 
-        var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<ApplicationDbContext>();
+    var db = services.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
 
-        await context.Database.MigrateAsync();
-
-        await RoleSeeder.SeedRolesAsync(services);
-        await AdminSeeder.SeedAdminAsync(services, builder.Configuration);
-
-        if (!await context.Companies.AnyAsync())
-        {
-            Console.WriteLine("🚀 Seeding demo data...");
-            await DemoDataSeeder.SeedDemoDataAsync(services, builder.Configuration);
-        }
-
-        Console.WriteLine("🟢 Startup completed");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("🔴 Startup failed");
-        Console.WriteLine(ex);
-        throw;
-    }
+    // Run relational demo seeding
+    await DependencySystem.Seeding.RelationalDemoSeeder
+        .SeedAsync(services, config);
 }
 
 // ============================

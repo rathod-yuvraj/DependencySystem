@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DependencySystem.Models.enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DependencySystem.Models
@@ -12,7 +13,8 @@ namespace DependencySystem.Models
         public string ModuleName { get; set; } = string.Empty;
 
         [Required]
-        public string Status { get; set; } = "Pending"; // Pending/InProgress/Completed
+        //public string Status { get; set; } = "Pending"; // Pending/InProgress/Completed
+        public ModuleStatus Status { get; set; } = ModuleStatus.Pending;
 
         [ForeignKey(nameof(Project))]
         public int ProjectID { get; set; }
@@ -36,4 +38,5 @@ namespace DependencySystem.Models
         public ICollection<ModuleTechnology> ModuleTechnologies { get; set; }
             = new List<ModuleTechnology>();
     }
+    
 }

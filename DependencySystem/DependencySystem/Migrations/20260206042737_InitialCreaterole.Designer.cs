@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DependencySystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260203122953_AddTaskTable")]
-    partial class AddTaskTable
+    [Migration("20260206042737_InitialCreaterole")]
+    partial class InitialCreaterole
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,6 +92,42 @@ namespace DependencySystem.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("DependencySystem.Models.AuditLog", b =>
+                {
+                    b.Property<int>("AuditLogID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AuditLogID"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("AuditLogID");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("DependencySystem.Models.Company", b =>
                 {
                     b.Property<int>("CompanyID")
@@ -134,6 +170,30 @@ namespace DependencySystem.Migrations
                     b.ToTable("Departments");
                 });
 
+            modelBuilder.Entity("DependencySystem.Models.Dependency", b =>
+                {
+                    b.Property<int>("DependencyID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("DependencyID"));
+
+                    b.Property<int>("SourceModuleID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TargetModuleID")
+                        .HasColumnType("int");
+
+                    b.HasKey("DependencyID");
+
+                    b.HasIndex("TargetModuleID");
+
+                    b.HasIndex("SourceModuleID", "TargetModuleID")
+                        .IsUnique();
+
+                    b.ToTable("Dependencies");
+                });
+
             modelBuilder.Entity("DependencySystem.Models.Module", b =>
                 {
                     b.Property<int>("ModuleID")
@@ -159,6 +219,21 @@ namespace DependencySystem.Migrations
                     b.HasIndex("ProjectID");
 
                     b.ToTable("Modules");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.ModuleTechnology", b =>
+                {
+                    b.Property<int>("ModuleID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TechnologyID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ModuleID", "TechnologyID");
+
+                    b.HasIndex("TechnologyID");
+
+                    b.ToTable("ModuleTechnologies");
                 });
 
             modelBuilder.Entity("DependencySystem.Models.OtpVerification", b =>
@@ -212,6 +287,40 @@ namespace DependencySystem.Migrations
                     b.ToTable("Projects");
                 });
 
+            modelBuilder.Entity("DependencySystem.Models.ProjectTeamMember", b =>
+                {
+                    b.Property<int>("ProjectID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserID")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("ProjectID", "UserID");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("ProjectTeamMembers");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.ProjectTechnology", b =>
+                {
+                    b.Property<int>("ProjectID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TechnologyID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProjectID", "TechnologyID");
+
+                    b.HasIndex("TechnologyID");
+
+                    b.ToTable("ProjectTechnologies");
+                });
+
             modelBuilder.Entity("DependencySystem.Models.RefreshToken", b =>
                 {
                     b.Property<int>("RefreshTokenId")
@@ -239,6 +348,21 @@ namespace DependencySystem.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.TaskDependency", b =>
+                {
+                    b.Property<int>("TaskID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DependsOnTaskID")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskID", "DependsOnTaskID");
+
+                    b.HasIndex("DependsOnTaskID");
+
+                    b.ToTable("TaskDependencies");
                 });
 
             modelBuilder.Entity("DependencySystem.Models.TaskEntity", b =>
@@ -270,6 +394,71 @@ namespace DependencySystem.Migrations
                     b.HasIndex("ModuleID");
 
                     b.ToTable("Tasks", (string)null);
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.TeamMemberProfile", b =>
+                {
+                    b.Property<int>("TeamMemberProfileID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("TeamMemberProfileID"));
+
+                    b.Property<int?>("DepartmentID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Designation")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("ExperienceYears")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("TeamMemberProfileID");
+
+                    b.HasIndex("DepartmentID");
+
+                    b.HasIndex("UserID")
+                        .IsUnique();
+
+                    b.ToTable("TeamMemberProfiles");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.Technology", b =>
+                {
+                    b.Property<int>("TechnologyID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("TechnologyID"));
+
+                    b.Property<string>("TechnologyName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("TechnologyID");
+
+                    b.ToTable("Technologies");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.UserTechnology", b =>
+                {
+                    b.Property<string>("UserID")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("TechnologyID")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserID", "TechnologyID");
+
+                    b.HasIndex("TechnologyID");
+
+                    b.ToTable("UserTechnologies");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -415,10 +604,29 @@ namespace DependencySystem.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("DependencySystem.Models.Dependency", b =>
+                {
+                    b.HasOne("DependencySystem.Models.Module", "SourceModule")
+                        .WithMany("OutgoingDependencies")
+                        .HasForeignKey("SourceModuleID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DependencySystem.Models.Module", "TargetModule")
+                        .WithMany("IncomingDependencies")
+                        .HasForeignKey("TargetModuleID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("SourceModule");
+
+                    b.Navigation("TargetModule");
+                });
+
             modelBuilder.Entity("DependencySystem.Models.Module", b =>
                 {
                     b.HasOne("DependencySystem.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("Modules")
                         .HasForeignKey("ProjectID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -426,15 +634,72 @@ namespace DependencySystem.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("DependencySystem.Models.ModuleTechnology", b =>
+                {
+                    b.HasOne("DependencySystem.Models.Module", "Module")
+                        .WithMany("ModuleTechnologies")
+                        .HasForeignKey("ModuleID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DependencySystem.Models.Technology", "Technology")
+                        .WithMany()
+                        .HasForeignKey("TechnologyID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Module");
+
+                    b.Navigation("Technology");
+                });
+
             modelBuilder.Entity("DependencySystem.Models.Project", b =>
                 {
                     b.HasOne("DependencySystem.Models.Department", "Department")
-                        .WithMany()
+                        .WithMany("Projects")
                         .HasForeignKey("DepartmentID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.ProjectTeamMember", b =>
+                {
+                    b.HasOne("DependencySystem.Models.Project", "Project")
+                        .WithMany("ProjectTeamMembers")
+                        .HasForeignKey("ProjectID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DependencySystem.Models.ApplicationUser", "User")
+                        .WithMany("ProjectTeamMembers")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.ProjectTechnology", b =>
+                {
+                    b.HasOne("DependencySystem.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DependencySystem.Models.Technology", "Technology")
+                        .WithMany()
+                        .HasForeignKey("TechnologyID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Technology");
                 });
 
             modelBuilder.Entity("DependencySystem.Models.RefreshToken", b =>
@@ -448,15 +713,71 @@ namespace DependencySystem.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("DependencySystem.Models.TaskDependency", b =>
+                {
+                    b.HasOne("DependencySystem.Models.TaskEntity", "DependsOnTask")
+                        .WithMany("DependentTasks")
+                        .HasForeignKey("DependsOnTaskID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DependencySystem.Models.TaskEntity", "Task")
+                        .WithMany("TaskDependencies")
+                        .HasForeignKey("TaskID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DependsOnTask");
+
+                    b.Navigation("Task");
+                });
+
             modelBuilder.Entity("DependencySystem.Models.TaskEntity", b =>
                 {
                     b.HasOne("DependencySystem.Models.Module", "Module")
-                        .WithMany()
+                        .WithMany("Tasks")
                         .HasForeignKey("ModuleID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Module");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.TeamMemberProfile", b =>
+                {
+                    b.HasOne("DependencySystem.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DependencySystem.Models.ApplicationUser", "User")
+                        .WithOne("TeamMemberProfile")
+                        .HasForeignKey("DependencySystem.Models.TeamMemberProfile", "UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.UserTechnology", b =>
+                {
+                    b.HasOne("DependencySystem.Models.Technology", "Technology")
+                        .WithMany()
+                        .HasForeignKey("TechnologyID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DependencySystem.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Technology");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -510,9 +831,46 @@ namespace DependencySystem.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("DependencySystem.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("ProjectTeamMembers");
+
+                    b.Navigation("TeamMemberProfile");
+                });
+
             modelBuilder.Entity("DependencySystem.Models.Company", b =>
                 {
                     b.Navigation("Departments");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.Department", b =>
+                {
+                    b.Navigation("Projects");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.Module", b =>
+                {
+                    b.Navigation("IncomingDependencies");
+
+                    b.Navigation("ModuleTechnologies");
+
+                    b.Navigation("OutgoingDependencies");
+
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.Project", b =>
+                {
+                    b.Navigation("Modules");
+
+                    b.Navigation("ProjectTeamMembers");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.TaskEntity", b =>
+                {
+                    b.Navigation("DependentTasks");
+
+                    b.Navigation("TaskDependencies");
                 });
 #pragma warning restore 612, 618
         }

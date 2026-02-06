@@ -1,5 +1,6 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.DTOs.Dashboard;
+using DependencySystem.Models.enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace DependencySystem.Services.Dashboard
@@ -21,13 +22,14 @@ namespace DependencySystem.Services.Dashboard
                 .ToListAsync();
 
             var totalModules = modules.Count;
-            var completedModules = modules.Count(m => m.Status == "Completed");
-            var inProgressModules = modules.Count(m => m.Status == "InProgress");
+            var completedModules = modules.Count(m => m.Status == ModuleStatus.Completed);
+            var inProgressModules = modules.Count(m => m.Status == ModuleStatus.InProgress);
 
             var tasks = modules.SelectMany(m => m.Tasks).ToList();
             var totalTasks = tasks.Count;
-            var completedTasks = tasks.Count(t => t.Status == "Completed");
-            var pendingTasks = tasks.Count(t => t.Status != "Completed");
+            var completedTasks = tasks.Count(t => t.Status == TaskStatuss.Completed);
+            var pendingTasks = tasks.Count(t => t.Status != TaskStatuss.Completed);
+
 
             // Blocked tasks = tasks having dependencies
             var blockedTasks = await _context.TaskDependencies

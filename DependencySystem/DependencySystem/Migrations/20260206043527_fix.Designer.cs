@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DependencySystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260204225542_FixRelationsFinal")]
-    partial class FixRelationsFinal
+    [Migration("20260206043527_fix")]
+    partial class fix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

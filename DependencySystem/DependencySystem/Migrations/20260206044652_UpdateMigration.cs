@@ -5,7 +5,7 @@
 namespace DependencySystem.Migrations
 {
     /// <inheritdoc />
-    public partial class updatesecurityasd : Migration
+    public partial class UpdateMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

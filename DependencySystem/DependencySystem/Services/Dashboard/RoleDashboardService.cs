@@ -1,6 +1,7 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.DTOs.Dashboard;
 using DependencySystem.Models;
+using DependencySystem.Models.enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,15 +42,18 @@ namespace DependencySystem.Services.Dashboard
             var modules = project.Modules;
             var tasks = modules.SelectMany(m => m.Tasks).ToList();
 
-            var completedTasks = tasks.Count(t => t.Status == "Completed");
-
+            //var completedTasks = tasks.Count(t => t.Status == "Completed");
+            var completedTasks = tasks.Count(t => t.Status == TaskStatuss.Completed);
             return new ManagerDashboardDto
             {
                 ProjectId = project.ProjectID,
                 ProjectName = project.ProjectName,
 
                 TotalModules = modules.Count,
-                CompletedModules = modules.Count(m => m.Status == "Completed"),
+                //CompletedModules = modules.Count(m => m.Status == "Completed"),
+               
+
+                CompletedModules = modules.Count(m => m.Status == ModuleStatus.Completed),
 
                 TotalTasks = tasks.Count,
                 CompletedTasks = completedTasks,
@@ -72,7 +76,8 @@ namespace DependencySystem.Services.Dashboard
                     .Any(ptm => ptm.UserID == userId))
                 .ToListAsync();
 
-            var completed = tasks.Count(t => t.Status == "Completed");
+            //var completed = tasks.Count(t => t.Status == "Completed");
+            var completed = tasks.Count(t => t.Status == TaskStatuss.Completed);
 
             return new DeveloperDashboardDto
             {
@@ -82,6 +87,7 @@ namespace DependencySystem.Services.Dashboard
                 TotalAssignedTasks = tasks.Count,
                 CompletedTasks = completed,
                 PendingTasks = tasks.Count - completed,
+
                 BlockedTasks = await _context.TaskDependencies
                     .CountAsync(td => td.Task.Module.Project.ProjectTeamMembers
                         .Any(ptm => ptm.UserID == userId))

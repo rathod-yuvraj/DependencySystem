@@ -157,6 +157,15 @@ namespace DependencySystem.DAL   // or whatever namespace you use
 
             builder.Entity<UserTechnology>()
                 .HasKey(x => new { x.UserID, x.TechnologyID });
+            // ================= ENUM MAPPINGS =================
+            builder.Entity<Module>()
+                .Property(m => m.Status)
+                .HasConversion<string>();
+
+            builder.Entity<TaskEntity>()
+                .Property(t => t.Status)
+                .HasConversion<string>();
+
         }
 
     }

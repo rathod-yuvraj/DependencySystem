@@ -1,6 +1,7 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.DTOs.Task;
 using DependencySystem.Models;
+using DependencySystem.Models.enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace DependencySystem.Services.Tasks
@@ -46,7 +47,8 @@ namespace DependencySystem.Services.Tasks
                 Title = dto.Title,
                 Description = dto.Description,
                 ModuleID = dto.ModuleID,
-                Status = "Pending"
+                //Status = "Pending"
+                Status=TaskStatuss.Pending
             };
 
             _context.Tasks.Add(task);

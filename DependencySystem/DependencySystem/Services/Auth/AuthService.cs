@@ -1,5 +1,6 @@
 ﻿using DependencySystem.DAL;
 using DependencySystem.DTOs.Auth;
+using DependencySystem.Helper;
 using DependencySystem.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,11 @@ namespace DependencySystem.Services.Auth
         private readonly IConfiguration _config;
         private readonly IEmailService _emailService;
 
-        public AuthService(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IConfiguration config, IEmailService emailService)
+        public AuthService(
+            UserManager<ApplicationUser> userManager,
+            ApplicationDbContext context,
+            IConfiguration config,
+            IEmailService emailService)
         {
             _userManager = userManager;
             _context = context;
@@ -25,60 +30,50 @@ namespace DependencySystem.Services.Auth
             _emailService = emailService;
         }
 
-
+        // =====================================================
+        // REGISTER
+        // =====================================================
         public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto dto)
         {
-            var existingUserByEmail = await _userManager.FindByEmailAsync(dto.Email);
-            if (existingUserByEmail != null)
-                return new AuthResponseDto { Success = false, Message = "Email already exists." };
+            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+                return Fail("Email already exists.");
 
-            var existingUserByUsername = await _userManager.FindByNameAsync(dto.Username);
-            if (existingUserByUsername != null)
-                return new AuthResponseDto { Success = false, Message = "Username already exists." };
+            if (await _userManager.FindByNameAsync(dto.Username) != null)
+                return Fail("Username already exists.");
 
             var user = new ApplicationUser
             {
                 UserName = dto.Username,
                 Email = dto.Email,
+      
                 IsVerified = false
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
 
             if (!result.Succeeded)
-            {
-                return new AuthResponseDto
-                {
-                    Success = false,
-                    Message = string.Join(" | ", result.Errors.Select(e => e.Description))
-                };
-            }
+                return Fail(string.Join(" | ", result.Errors.Select(e => e.Description)));
 
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = "User registered successfully. Please verify OTP."
-            };
+            return Success("User registered successfully. Please verify OTP.");
         }
 
+        // =====================================================
+        // LOGIN
+        // =====================================================
         public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto)
         {
-            ApplicationUser? user = await _userManager.FindByEmailAsync(dto.EmailOrUsername);
-
-            if (user == null)
-                user = await _userManager.FindByNameAsync(dto.EmailOrUsername);
+            var user = await _userManager.FindByEmailAsync(dto.EmailOrUsername)
+                       ?? await _userManager.FindByNameAsync(dto.EmailOrUsername);
 
             if (user == null)
                 return new LoginResponseDto { Success = false, Message = "Invalid credentials." };
 
             if (!user.IsVerified)
-                return new LoginResponseDto { Success = false, Message = "User not verified. Please verify OTP." };
+                return new LoginResponseDto { Success = false, Message = "User not verified." };
 
-            var validPassword = await _userManager.CheckPasswordAsync(user, dto.Password);
-            if (!validPassword)
+            if (!await _userManager.CheckPasswordAsync(user, dto.Password))
                 return new LoginResponseDto { Success = false, Message = "Invalid credentials." };
 
-            // ✅ Create JWT
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -91,60 +86,58 @@ namespace DependencySystem.Services.Auth
                 claims.Add(new Claim(ClaimTypes.Role, role));
 
             var jwtSection = _config.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!));
+            var key = GetJwtKey();
 
             var token = new JwtSecurityToken(
                 issuer: jwtSection["Issuer"],
                 audience: jwtSection["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSection["DurationInMinutes"])),
+                expires: DateTime.UtcNow.AddMinutes(
+                    Convert.ToDouble(jwtSection["DurationInMinutes"])
+                ),
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
 
             var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-            // ✅ Refresh Token
             var refreshToken = Guid.NewGuid().ToString();
-            var refreshEntity = new RefreshToken
+            _context.RefreshTokens.Add(new RefreshToken
             {
                 Token = refreshToken,
                 UserId = user.Id,
                 ExpiryDate = DateTime.UtcNow.AddDays(7),
                 IsRevoked = false
-            };
+            });
 
-            _context.RefreshTokens.Add(refreshEntity);
             await _context.SaveChangesAsync();
 
             return new LoginResponseDto
             {
                 Success = true,
-                Message = "Login successful.",
+                Message = "Login successful",
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
                 Expiration = token.ValidTo
             };
         }
 
+        // =====================================================
+        // REFRESH TOKEN
+        // =====================================================
         public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
         {
-            var savedToken = await _context.RefreshTokens
-                .FirstOrDefaultAsync(x => x.Token == dto.RefreshToken && x.IsRevoked == false);
+            var storedToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(x => x.Token == dto.RefreshToken && !x.IsRevoked);
 
-            if (savedToken == null)
+            if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
                 return new LoginResponseDto { Success = false, Message = "Invalid refresh token." };
 
-            if (savedToken.ExpiryDate < DateTime.UtcNow)
-                return new LoginResponseDto { Success = false, Message = "Refresh token expired." };
-
-            var user = await _userManager.FindByIdAsync(savedToken.UserId);
+            var user = await _userManager.FindByIdAsync(storedToken.UserId);
             if (user == null)
                 return new LoginResponseDto { Success = false, Message = "User not found." };
 
-            // ✅ revoke old refresh token (rotation)
-            savedToken.IsRevoked = true;
+            storedToken.IsRevoked = true;
 
-            // ✅ create new access token
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -157,19 +150,20 @@ namespace DependencySystem.Services.Auth
                 claims.Add(new Claim(ClaimTypes.Role, role));
 
             var jwtSection = _config.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!));
+            var key = GetJwtKey();
 
             var token = new JwtSecurityToken(
                 issuer: jwtSection["Issuer"],
                 audience: jwtSection["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSection["DurationInMinutes"])),
+                expires: DateTime.UtcNow.AddMinutes(
+                    Convert.ToDouble(jwtSection["DurationInMinutes"])
+                ),
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
 
             var newAccessToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-            // ✅ generate new refresh token
             var newRefreshToken = Guid.NewGuid().ToString();
             _context.RefreshTokens.Add(new RefreshToken
             {
@@ -184,165 +178,219 @@ namespace DependencySystem.Services.Auth
             return new LoginResponseDto
             {
                 Success = true,
-                Message = "Token refreshed successfully.",
+                Message = "Token refreshed",
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken,
                 Expiration = token.ValidTo
             };
         }
 
+
+        // =====================================================
+        // OTP VERIFICATION
+        // =====================================================
         public async Task<AuthResponseDto> VerifyOtpAsync(VerifyOtpRequestDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null)
-                return new AuthResponseDto { Success = false, Message = "User not found." };
+                return Fail("User not found.");
 
-            var otpRecord = await _context.OtpVerifications
-                .FirstOrDefaultAsync(x => x.Email == dto.Email && x.OtpCode == dto.OtpCode && x.IsUsed == false);
+            var otp = await _context.OtpVerifications.FirstOrDefaultAsync(x =>
+                x.Email == dto.Email &&
+                x.OtpCode == dto.OtpCode &&
+                !x.IsUsed &&
+                x.ExpiryTime > DateTime.UtcNow);
 
-            if (otpRecord == null)
-                return new AuthResponseDto { Success = false, Message = "Invalid OTP." };
+            if (otp == null)
+                return Fail("Invalid or expired OTP.");
 
-            if (otpRecord.ExpiryTime < DateTime.UtcNow)
-                return new AuthResponseDto { Success = false, Message = "OTP expired." };
-
-            otpRecord.IsUsed = true;
+            otp.IsUsed = true;
             user.IsVerified = true;
-            await _userManager.AddToRoleAsync(user, Helper.AppRoles.Developer);
+
+            await _userManager.AddToRoleAsync(user, AppRoles.Developer);
 
             await _context.SaveChangesAsync();
             await _userManager.UpdateAsync(user);
 
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = "OTP verified successfully. Account activated."
-            };
+            return Success("OTP verified successfully. Account activated.");
         }
 
+        // =====================================================
+        // SEND OTP
+        // =====================================================
         public async Task<AuthResponseDto> SendOtpAsync(SendOtpRequestDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null)
-                return new AuthResponseDto { Success = false, Message = "User not found with this email." };
+                return Fail("User not found.");
 
             if (user.IsVerified)
-                return new AuthResponseDto { Success = false, Message = "User already verified." };
+                return Fail("User already verified.");
 
-            var otp = new Random().Next(100000, 999999).ToString();
+            await InvalidateOldOtp(dto.Email);
 
-            var oldOtp = await _context.OtpVerifications
-                .FirstOrDefaultAsync(x => x.Email == dto.Email && x.IsUsed == false);
+            var otp = GenerateOtp();
 
-            if (oldOtp != null)
-                _context.OtpVerifications.Remove(oldOtp);
-
-            var otpEntity = new OtpVerification
+            await _context.OtpVerifications.AddAsync(new OtpVerification
             {
                 Email = dto.Email,
                 OtpCode = otp,
                 ExpiryTime = DateTime.UtcNow.AddMinutes(5),
                 IsUsed = false
-            };
+            });
 
-            await _context.OtpVerifications.AddAsync(otpEntity);
             await _context.SaveChangesAsync();
 
-            // ✅ Send OTP Email
-            var subject = "OTP Verification - DependencySystem";
-            var body = $@"
-        <h3>Your OTP Code</h3>
-        <p>Your OTP is: <b style='font-size:20px'>{otp}</b></p>
-        <p>This OTP will expire in 5 minutes.</p>
-    ";
+            await _emailService.SendEmailAsync(
+                dto.Email,
+                "OTP Verification - DependencySystem",
+                $"<h3>Your OTP</h3><p><b>{otp}</b> (valid for 5 minutes)</p>"
+            );
 
-            await _emailService.SendEmailAsync(dto.Email, subject, body);
-
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = "OTP sent successfully to your email."
-            };
+            return Success("OTP sent successfully.");
         }
 
+        // =====================================================
+        // FORGOT PASSWORD
+        // =====================================================
         public async Task<AuthResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null)
-                return new AuthResponseDto { Success = false, Message = "User not found." };
+                return Fail("User not found.");
 
-            var otp = new Random().Next(100000, 999999).ToString();
+            await InvalidateOldOtp(dto.Email);
 
-            var oldOtp = await _context.OtpVerifications
-                .FirstOrDefaultAsync(x => x.Email == dto.Email && !x.IsUsed);
+            var otp = GenerateOtp();
 
-            if (oldOtp != null)
-                _context.OtpVerifications.Remove(oldOtp);
-
-            var otpEntity = new OtpVerification
+            await _context.OtpVerifications.AddAsync(new OtpVerification
             {
                 Email = dto.Email,
                 OtpCode = otp,
                 ExpiryTime = DateTime.UtcNow.AddMinutes(5),
                 IsUsed = false
-            };
+            });
 
-            await _context.OtpVerifications.AddAsync(otpEntity);
             await _context.SaveChangesAsync();
 
             await _emailService.SendEmailAsync(
                 dto.Email,
                 "Password Reset OTP",
-                $"<h3>Your OTP</h3><p><b>{otp}</b> (valid for 5 minutes)</p>"
+                $"<h3>Your OTP</h3><p><b>{otp}</b></p>"
             );
 
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = "Password reset OTP sent to email."
-            };
+            return Success("Password reset OTP sent.");
         }
 
-
-
-
+        // =====================================================
+        // RESET PASSWORD
+        // =====================================================
         public async Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordRequestDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null)
-                return new AuthResponseDto { Success = false, Message = "User not found." };
+                return Fail("User not found.");
 
-            var otpRecord = await _context.OtpVerifications.FirstOrDefaultAsync(x =>
+            var otp = await _context.OtpVerifications.FirstOrDefaultAsync(x =>
                 x.Email == dto.Email &&
                 x.OtpCode == dto.OtpCode &&
-                !x.IsUsed);
+                !x.IsUsed &&
+                x.ExpiryTime > DateTime.UtcNow);
 
-            if (otpRecord == null || otpRecord.ExpiryTime < DateTime.UtcNow)
-                return new AuthResponseDto { Success = false, Message = "Invalid or expired OTP." };
+            if (otp == null)
+                return Fail("Invalid or expired OTP.");
 
-            otpRecord.IsUsed = true;
+            otp.IsUsed = true;
 
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, dto.NewPassword);
 
             if (!result.Succeeded)
-            {
-                return new AuthResponseDto
-                {
-                    Success = false,
-                    Message = string.Join(" | ", result.Errors.Select(e => e.Description))
-                };
-            }
+                return Fail(string.Join(" | ", result.Errors.Select(e => e.Description)));
 
             await _context.SaveChangesAsync();
-
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = "Password reset successfully."
-            };
+            return Success("Password reset successfully.");
         }
 
+        // =====================================================
+        // PRIVATE HELPERS
+        // =====================================================
+        private async Task<(string Token, DateTime Expiry)> GenerateJwtToken(ApplicationUser user)
+        {
+            var jwt = _config.GetSection("Jwt");
+
+            var key = Environment.GetEnvironmentVariable("JWT_KEY")
+                      ?? jwt["Key"]
+                      ?? throw new Exception("JWT key missing");
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, user.Id),
+                new(ClaimTypes.Email, user.Email ?? ""),
+                new(ClaimTypes.Name, user.UserName ?? "")
+            };
+
+            var roles = await _userManager.GetRolesAsync(user);
+            claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+
+            var token = new JwtSecurityToken(
+                issuer: jwt["Issuer"],
+                audience: jwt["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(double.Parse(jwt["DurationInMinutes"]!)),
+                signingCredentials: new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                    SecurityAlgorithms.HmacSha256)
+            );
+
+            return (new JwtSecurityTokenHandler().WriteToken(token), token.ValidTo);
+        }
+
+        private async Task<RefreshToken> CreateRefreshToken(string userId)
+        {
+            var token = new RefreshToken
+            {
+                Token = Guid.NewGuid().ToString(),
+                UserId = userId,
+                ExpiryDate = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false
+            };
+
+            _context.RefreshTokens.Add(token);
+            await _context.SaveChangesAsync();
+
+            return token;
+        }
+
+        private async Task InvalidateOldOtp(string email)
+        {
+            var oldOtp = await _context.OtpVerifications
+                .FirstOrDefaultAsync(x => x.Email == email && !x.IsUsed);
+
+            if (oldOtp != null)
+                _context.OtpVerifications.Remove(oldOtp);
+        }
+
+        private static string GenerateOtp()
+            => new Random().Next(100000, 999999).ToString();
+
+        private static AuthResponseDto Fail(string msg)
+            => new() { Success = false, Message = msg };
+
+        private static AuthResponseDto Success(string msg)
+            => new() { Success = true, Message = msg };
+
+        private static LoginResponseDto LoginFail(string msg)
+            => new() { Success = false, Message = msg };
+        private SymmetricSecurityKey GetJwtKey()
+        {
+            var jwtKey =
+                Environment.GetEnvironmentVariable("JWT_KEY")
+                ?? _config["Jwt:Key"]
+                ?? throw new Exception("JWT key not configured");
+
+            return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        }
 
     }
 }

@@ -5,7 +5,7 @@
 namespace DependencySystem.Migrations
 {
     /// <inheritdoc />
-    public partial class AddRefreshTokenTable : Migration
+    public partial class fix : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

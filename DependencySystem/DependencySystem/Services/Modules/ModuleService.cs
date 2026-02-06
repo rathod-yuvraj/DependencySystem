@@ -45,7 +45,8 @@ namespace DependencySystem.Services.Modules
             {
                 ModuleName = dto.ModuleName,
                 ProjectID = dto.ProjectID,
-                Status = "Pending"
+                //Status = "Pending"
+                Status=Models.enums.ModuleStatus.Pending
             };
 
             _context.Modules.Add(module);

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DependencySystem.Models.enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DependencySystem.Models
@@ -14,7 +15,9 @@ namespace DependencySystem.Models
         public string Description { get; set; } = string.Empty;
 
         [Required]
-        public string Status { get; set; } = "Pending"; // Pending / InProgress / Completed
+        //public string Status { get; set; } = "Pending"; // Pending / InProgress / Completed
+        public TaskStatuss Status { get; set; } = TaskStatuss.Pending;
+
 
         [ForeignKey(nameof(Module))]
         public int ModuleID { get; set; }
@@ -31,4 +34,5 @@ namespace DependencySystem.Models
         public ICollection<TaskDependency> DependentTasks { get; set; }
             = new List<TaskDependency>();
     }
+   
 }

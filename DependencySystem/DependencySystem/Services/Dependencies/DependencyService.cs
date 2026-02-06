@@ -136,7 +136,7 @@ namespace DependencySystem.Services.Dependencies
                     Id = $"M{m.ModuleID}",
                     Label = m.ModuleName,
                     Type = "Module",
-                    Status = m.Status
+                    Status = m.Status.ToString()
                 });
             }
 
@@ -150,7 +150,7 @@ namespace DependencySystem.Services.Dependencies
                         Id = $"T{t.TaskID}",
                         Label = t.Title,
                         Type = "Task",
-                        Status = t.Status
+                        Status = t.Status.ToString()
                     });
 
                     // Module → Task edge

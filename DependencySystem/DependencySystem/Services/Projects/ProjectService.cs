@@ -34,12 +34,14 @@ namespace DependencySystem.Services.Projects
                     {
                         ModuleID = m.ModuleID,
                         ModuleName = m.ModuleName,
-                        Status = m.Status,
+                        Status = m.Status.ToString(),
+
                         Tasks = m.Tasks.Select(t => new TaskTreeDto
                         {
                             TaskID = t.TaskID,
                             Title = t.Title,
-                            Status = t.Status
+                            Status = m.Status.ToString(),
+
                         }).ToList()
                     }).ToList()
                 })

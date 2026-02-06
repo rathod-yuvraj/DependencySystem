@@ -5,7 +5,7 @@
 namespace DependencySystem.Migrations
 {
     /// <inheritdoc />
-    public partial class FixRelationsFinal : Migration
+    public partial class InitialCreateroleghrol : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

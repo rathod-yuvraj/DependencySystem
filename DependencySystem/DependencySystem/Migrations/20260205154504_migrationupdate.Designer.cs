@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DependencySystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260204101749_updatesecurity")]
-    partial class updatesecurity
+    [Migration("20260205154504_migrationupdate")]
+    partial class migrationupdate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -607,13 +607,13 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.Dependency", b =>
                 {
                     b.HasOne("DependencySystem.Models.Module", "SourceModule")
-                        .WithMany()
+                        .WithMany("OutgoingDependencies")
                         .HasForeignKey("SourceModuleID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("DependencySystem.Models.Module", "TargetModule")
-                        .WithMany()
+                        .WithMany("IncomingDependencies")
                         .HasForeignKey("TargetModuleID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -626,7 +626,7 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.Module", b =>
                 {
                     b.HasOne("DependencySystem.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("Modules")
                         .HasForeignKey("ProjectID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -637,7 +637,7 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.ModuleTechnology", b =>
                 {
                     b.HasOne("DependencySystem.Models.Module", "Module")
-                        .WithMany()
+                        .WithMany("ModuleTechnologies")
                         .HasForeignKey("ModuleID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -656,7 +656,7 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.Project", b =>
                 {
                     b.HasOne("DependencySystem.Models.Department", "Department")
-                        .WithMany()
+                        .WithMany("Projects")
                         .HasForeignKey("DepartmentID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -667,7 +667,7 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.ProjectTeamMember", b =>
                 {
                     b.HasOne("DependencySystem.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("ProjectTeamMembers")
                         .HasForeignKey("ProjectID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -716,13 +716,13 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.TaskDependency", b =>
                 {
                     b.HasOne("DependencySystem.Models.TaskEntity", "DependsOnTask")
-                        .WithMany()
+                        .WithMany("DependentTasks")
                         .HasForeignKey("DependsOnTaskID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("DependencySystem.Models.TaskEntity", "Task")
-                        .WithMany()
+                        .WithMany("TaskDependencies")
                         .HasForeignKey("TaskID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -735,7 +735,7 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.TaskEntity", b =>
                 {
                     b.HasOne("DependencySystem.Models.Module", "Module")
-                        .WithMany()
+                        .WithMany("Tasks")
                         .HasForeignKey("ModuleID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -841,6 +841,36 @@ namespace DependencySystem.Migrations
             modelBuilder.Entity("DependencySystem.Models.Company", b =>
                 {
                     b.Navigation("Departments");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.Department", b =>
+                {
+                    b.Navigation("Projects");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.Module", b =>
+                {
+                    b.Navigation("IncomingDependencies");
+
+                    b.Navigation("ModuleTechnologies");
+
+                    b.Navigation("OutgoingDependencies");
+
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.Project", b =>
+                {
+                    b.Navigation("Modules");
+
+                    b.Navigation("ProjectTeamMembers");
+                });
+
+            modelBuilder.Entity("DependencySystem.Models.TaskEntity", b =>
+                {
+                    b.Navigation("DependentTasks");
+
+                    b.Navigation("TaskDependencies");
                 });
 #pragma warning restore 612, 618
         }
